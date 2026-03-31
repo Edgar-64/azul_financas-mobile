@@ -1,9 +1,10 @@
 import { StyleSheet } from 'react-native';
+import { TelaLogin } from '../../components/organisms/TelaLogin'
 
 export default function TabOneScreen() {
   return (
     <>
-    
+      <TelaLogin/>
     </>
   );
 }

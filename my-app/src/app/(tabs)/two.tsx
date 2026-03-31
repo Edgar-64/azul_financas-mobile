@@ -1,9 +1,11 @@
+import { TelaCadastro } from '@/src/components/organisms/TelaCadas';
 import { StyleSheet } from 'react-native';
 
 
 export default function TabTwoScreen() {
   return (
-    <></>
+    <>
+    <TelaCadastro></TelaCadastro></>
   );
 }
 

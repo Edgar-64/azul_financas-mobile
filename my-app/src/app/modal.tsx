@@ -1,9 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
 import { Platform, StyleSheet } from 'react-native';
+import { RecuperarSenha } from '../components/organisms/RecupSenha';
 
 export default function ModalScreen() {
   return (
-    <></>
+    <>
+    <RecuperarSenha></RecuperarSenha>
+    </>
   );
 }
 
