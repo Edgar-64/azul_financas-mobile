@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { use, useState } from 'react';
+import { ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import Logo from '../atoms/Logo'
+import { Link } from 'expo-router';
+
 export function TelaCadastro() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [number, setNumber] = useState('');
 
   return (
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
     <View style={styles.container}>
         <Logo/>
       <Text style={styles.title}>Cadastro</Text>
@@ -35,19 +39,41 @@ export function TelaCadastro() {
         secureTextEntry
       />
 
+      <TextInput
+        style={styles.input}
+        placeholder="Número"
+        value={number}
+        onChangeText={setNumber}
+        secureTextEntry
+      />
+
       <TouchableOpacity style={styles.button}>
         <Text style={styles.buttonText}>Cadastrar</Text>
       </TouchableOpacity>
+
+      <Text style={styles.footer}>Já possui uma conta?
+        <Link href="/" style={styles.link}> Faça Login</Link>
+      </Text>
     </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    display: 'flex',
     flex: 1,
     justifyContent: 'center',
     padding: 20,
     backgroundColor: '#f5f5f5',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 20,
+  },
+  link:{
+    color: '#93e9ff',
   },
   title: {
     fontSize: 28,
@@ -57,12 +83,12 @@ const styles = StyleSheet.create({
     color: '#53c0ff',
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: '#9cdbff',
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#000000',
   },
   button: {
     backgroundColor: '#007bff',

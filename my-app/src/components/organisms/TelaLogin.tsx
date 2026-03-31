@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { ImageBackground, View, Text, TextInput, StyleSheet, ScrollView } from 'react-native';
 import Logo from '../atoms/Logo';
-
+import { Link } from 'expo-router';
+import { LoginBut } from '../atoms/LoginBut';
 
 export function TelaLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   return (
-    
+    <ImageBackground 
+      source={require('../../assets/images/Tela Splash.png')} 
+      style={styles.fixedBackground}
+      resizeMode="cover" >
+
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
     <View style={styles.container}>
         <Logo/>
       <Text style={styles.title}>Login</Text>
@@ -30,12 +36,20 @@ export function TelaLogin() {
         secureTextEntry
       />
 
-      <TouchableOpacity style={styles.button}>
+      <LoginBut>
         <Text style={styles.buttonText}>Entrar</Text>
-      </TouchableOpacity>
+      </LoginBut>
 
-      <Text style={styles.footer}>Esqueceu a senha?</Text>
+      <Text style={styles.footer}>Não tem uma conta?
+        <Link href="/two" style={styles.link}> Cadastre-se</Link>
+      </Text>
+
+      <Text style={styles.footer}>Esqueceu a senha?
+        <Link href="/modal" style={styles.link}> Recuperar</Link>
+      </Text>
     </View>
+    </ScrollView>
+    </ImageBackground>
   );
 }
 
@@ -44,7 +58,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 20,
-    backgroundColor: '#f5f5f5',
+  },
+  fixedBackground: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 20,
+  },
+  link:{
+    color: '#93e9ff',
   },
   title: {
     fontSize: 28,
