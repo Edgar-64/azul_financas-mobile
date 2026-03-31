@@ -1,7 +1,8 @@
 import React, { use, useState } from 'react';
-import { ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { ImageBackground, ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import Logo from '../atoms/Logo'
 import { Link } from 'expo-router';
+import { CadasBut } from '../atoms/CadasBut';
 
 export function TelaCadastro() {
   const [name, setName] = useState('');
@@ -10,6 +11,11 @@ export function TelaCadastro() {
   const [number, setNumber] = useState('');
 
   return (
+    <ImageBackground
+          source={require("../../assets/images/Tela Splash.png")}
+          style={styles.fixedBackground}
+          resizeMode="cover"
+        >
     <ScrollView contentContainerStyle={styles.scrollContainer}>
     <View style={styles.container}>
         <Logo/>
@@ -47,15 +53,16 @@ export function TelaCadastro() {
         secureTextEntry
       />
 
-      <TouchableOpacity style={styles.button}>
+      <CadasBut style={styles.button}>
         <Text style={styles.buttonText}>Cadastrar</Text>
-      </TouchableOpacity>
+      </CadasBut>
 
       <Text style={styles.footer}>Já possui uma conta?
         <Link href="/" style={styles.link}> Faça Login</Link>
       </Text>
     </View>
     </ScrollView>
+    </ImageBackground>
   );
 }
 

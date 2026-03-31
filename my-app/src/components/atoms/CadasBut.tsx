@@ -8,7 +8,7 @@ export function CadasBut() {
     <View style={styles.container}>
 
       <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>Entrar</Text>
+        <Text style={styles.buttonText}>Cadastrar</Text>
       </TouchableOpacity>
     </View>
   );
@@ -16,10 +16,7 @@ export function CadasBut() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
   },
   button: {
     backgroundColor: '#007bff',
