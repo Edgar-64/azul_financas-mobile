@@ -3,6 +3,8 @@ import { ImageBackground, View, Text, TextInput, StyleSheet, ScrollView } from '
 import Logo from '../atoms/Logo';
 import { Link } from 'expo-router';
 import { LoginBut } from '../atoms/LoginBut';
+import { SenhaInput } from '../atoms/SenhaInput';
+import { EmailInput } from '../atoms/EmailInput';
 
 export function TelaLogin() {
   const [email, setEmail] = useState('');

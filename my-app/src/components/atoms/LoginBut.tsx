@@ -4,7 +4,6 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 export function LoginBut() {
 
   return (
-    
     <View style={styles.container}>
 
       <TouchableOpacity style={styles.button}>
