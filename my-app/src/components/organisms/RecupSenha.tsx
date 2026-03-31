@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { ImageBackground, ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 
 export function RecuperarSenha() {
   const [email, setEmail] = useState('');
 
   return (
+    <ImageBackground
+              source={require("../../assets/images/Tela Splash.png")}
+              style={styles.fixedBackground}
+              resizeMode="cover"
+            >
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
     <View style={styles.container}>
       <Text style={styles.title}>Recuperar Senha</Text>
 
@@ -21,15 +27,24 @@ export function RecuperarSenha() {
         <Text style={styles.buttonText}>Enviar</Text>
       </TouchableOpacity>
     </View>
+    </ScrollView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    justifyContent: 'center',
+  },
+  fixedBackground: {
     flex: 1,
+    width: "100%",
+    height: "100%",
+  },
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
     padding: 20,
-    backgroundColor: '#f5f5f5',
   },
   title: {
     fontSize: 28,
@@ -38,12 +53,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: '#9cdbff',
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#000000',
   },
   button: {
     backgroundColor: '#007bff',

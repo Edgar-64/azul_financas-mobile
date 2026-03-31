@@ -3,6 +3,7 @@ import { ImageBackground, ScrollView, View, Text, TextInput, TouchableOpacity, S
 import Logo from '../atoms/Logo'
 import { Link } from 'expo-router';
 import { CadasBut } from '../atoms/CadasBut';
+import { NumInput } from '../atoms/NumInput';
 
 export function TelaCadastro() {
   const [name, setName] = useState('');
@@ -68,11 +69,12 @@ export function TelaCadastro() {
 
 const styles = StyleSheet.create({
   container: {
-    display: 'flex',
-    flex: 1,
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+  },
+  fixedBackground: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
   },
   scrollContainer: {
     flexGrow: 1,
@@ -112,6 +114,6 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: 15,
     textAlign: 'center',
-    color: '#555',
+    color: '#adadad',
   },
 });

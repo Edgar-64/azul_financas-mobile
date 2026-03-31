@@ -72,9 +72,7 @@ export function TelaLogin() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     justifyContent: "center",
-    padding: 20,
   },
   fixedBackground: {
     flex: 1,
@@ -102,7 +100,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#000000",
   },
   button: {
     backgroundColor: "#007bff",
@@ -119,6 +117,6 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: 15,
     textAlign: "center",
-    color: "#555",
+    color: "#adadad",
   },
 });
