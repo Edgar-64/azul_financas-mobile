@@ -1,27 +1,9 @@
-import { StyleSheet } from 'react-native';
-import { TelaLogin } from '../../components/organisms/TelaLogin'
+import { View, Text } from 'react-native';
 
-export default function TabOneScreen() {
+export default function Home() {
   return (
-    <>
-      <TelaLogin/>
-    </>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Text>O App carregou! 🎉</Text>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-});

@@ -19,6 +19,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
+          title: "Inicial",
+          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="login"
+        options={{
           title: "Login",
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
           headerRight: () => (
@@ -37,7 +44,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="cadastro"
         options={{
           title: "Cadastro",
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
