@@ -51,7 +51,7 @@ export function TelaLogin() {
 
           <Text style={styles.footer}>
             Não tem uma conta?
-            <Link href="/two" style={styles.link}>
+            <Link href="/cadastro" style={styles.link}>
               {" "}
               Cadastre-se
             </Link>

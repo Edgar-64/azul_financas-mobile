@@ -1,14 +1,14 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
-import 'react-native-reanimated';
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { useFonts } from "expo-font";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect, useState } from "react";
+import "react-native-reanimated";
 
-export { ErrorBoundary } from 'expo-router';
+export { ErrorBoundary } from "expo-router";
 
 export const unstable_settings = {
-  initialRouteName: '(tabs)',
+  initialRouteName: "(tabs)",
 };
 
 // Impede a splash de sumir sozinha
@@ -19,7 +19,7 @@ export default function RootLayout() {
 
   // Ajustado o caminho das fontes para sua pasta src/assets
   const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     ...FontAwesome.font,
   });
 
@@ -33,7 +33,7 @@ export default function RootLayout() {
         // Se as fontes carregarem, esperamos mais um pouco (ex: 2 segundos)
         // para a imagem da splash ser apreciada pelo usuário
         if (loaded) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise((resolve) => setTimeout(resolve, 2000));
           setAppIsReady(true);
         }
       } catch (e) {
@@ -63,7 +63,7 @@ function RootLayoutNav() {
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="info" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="info" options={{ presentation: "modal" }} />
     </Stack>
   );
 }
