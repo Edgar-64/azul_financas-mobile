@@ -5,7 +5,6 @@ import { Pressable } from "react-native";
 
 import Colors from "@/src/constants/Colors";
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>["name"];
   color: string;
@@ -15,7 +14,12 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   return (
-    <Tabs screenOptions={{}}>
+    <Tabs
+      screenOptions={{
+        // Define o estilo padrão como 'none' para todas as telas deste layout
+        tabBarStyle: { display: "none" },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
