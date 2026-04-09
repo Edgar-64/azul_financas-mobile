@@ -6,16 +6,30 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
+  TouchableOpacity, // Importante para o clique
 } from "react-native";
 import Logo from "../atoms/Logo";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router"; // Adicionei o useRouter aqui
 import { LoginBut } from "../atoms/LoginBut";
-import { SenhaInput } from "../atoms/SenhaInput";
-import { EmailInput } from "../atoms/EmailInput";
 
 export function TelaLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  
+  // 1. Inicializa o roteador
+  const router = useRouter();
+
+  // 2. Função que será chamada ao clicar
+  const handleLogin = () => {
+    // Aqui você pode colocar uma validação simples
+    if (email !== "" && password !== "") {
+      // 3. Navega para a tela de dashboard
+      // Certifique-se de que o arquivo app/dashboard.tsx exista!
+      router.replace("/dashboard"); 
+    } else {
+      alert("Por favor, preencha o email e a senha.");
+    }
+  };
 
   return (
     <ImageBackground
@@ -35,6 +49,7 @@ export function TelaLogin() {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            placeholderTextColor="#555"
           />
 
           <TextInput
@@ -43,11 +58,15 @@ export function TelaLogin() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            placeholderTextColor="#555"
           />
 
-          <LoginBut>
-            <Text style={styles.buttonText}>Entrar</Text>
-          </LoginBut>
+          {/* 4. Adicione o onPress aqui */}
+          <TouchableOpacity onPress={handleLogin} activeOpacity={0.8}>
+             <LoginBut>
+                <Text style={styles.buttonText}>Entrar</Text>
+             </LoginBut>
+          </TouchableOpacity>
 
           <Text style={styles.footer}>
             Não tem uma conta?
@@ -86,6 +105,7 @@ const styles = StyleSheet.create({
   },
   link: {
     color: "#93e9ff",
+    fontWeight: "bold",
   },
   title: {
     fontSize: 28,
@@ -101,18 +121,13 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     borderWidth: 1,
     borderColor: "#000000",
-  },
-  button: {
-    backgroundColor: "#007bff",
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 10,
+    color: "#000", // Garante que o texto digitado apareça
   },
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+    textAlign: "center",
   },
   footer: {
     marginTop: 15,
