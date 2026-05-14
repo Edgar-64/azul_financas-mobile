@@ -29,6 +29,7 @@ export default function CadastroScreen({ navigation }: any) {
     try {
       // Montamos o objeto e enviamos para a função do outro arquivo
       const objetoParaEnvio = { name, email, password };
+      const resultado = UserCadastro(objetoParaEnvio);
 
       alert("Cadastro realizado com sucesso");
     } catch (error) {

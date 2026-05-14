@@ -1,19 +1,21 @@
 const API_URL = "http://10.108.22.20:3001";
 
-// Função genérica para evitar repetição
-const apiRequest = async (endpoint: string, dados: any) => {
+const apiRequest = async (method: "GET" | "POST" | "PUT" | "DELETE", endpoint: string, dados: any = null) => {
   try {
-    const res = await fetch(`${API_URL}${endpoint}`, {
-      method: "POST",
+    const config: RequestInit = {
+      method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(dados),
-    });
+    };
 
-    const responseData = await res.json();
+    if (dados && method !== "GET") {
+      config.body = JSON.stringify(dados);
+    }
+
+    const res = await fetch(`${API_URL}${endpoint}`, config);
+    const responseData = res.status !== 204 ? await res.json() : null;
 
     if (!res.ok) {
-      console.error(`Erro em ${endpoint}:`, responseData);
-      throw new Error(responseData.message || "Erro na requisição");
+      throw new Error(responseData?.message || `Erro na requisição ${method}`);
     }
 
     return responseData;
@@ -23,5 +25,10 @@ const apiRequest = async (endpoint: string, dados: any) => {
   }
 };
 
-export const UserLogin = (dados: any) => apiRequest("/users/login", dados);
-export const UserCadastro = (dados: any) => apiRequest("/users/cadastro", dados);
+// --- MÉTODOS EXPORTADOS ---
+
+export const UserCadastro = (dados: any) => apiRequest("POST", "/users/cadastro", dados);
+export const UserLogin = (dados: any) => apiRequest("POST", "/users/login", dados);
+export const PayGet = () => apiRequest("GET", "/Pay");
+export const ContaGet = (userId: string | number) => apiRequest("GET", `/Conta/${userId}`);
+export const UserGet = (userId: string | number) => apiRequest("GET", `/users/${userId}`);

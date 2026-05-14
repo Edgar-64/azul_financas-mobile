@@ -24,10 +24,12 @@ export default function LoginScreen({ navigation }: any) {
     try {
       // Montamos o objeto e enviamos para a função do outro arquivo
       const objetoParaEnvio = { email, password };
+      const resultado = UserLogin(objetoParaEnvio);
+      const userIdLogado = resultado.id;
 
       alert("Login realizado com sucesso");
-      
-      navigation.replace("Home");
+
+      navigation.replace("Home", { userId: userIdLogado });
     } catch (error) {
       alert("Falha no login. Verifique seus dados ou o servidor.");
     }
