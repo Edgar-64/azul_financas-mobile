@@ -14,24 +14,63 @@ import { UserLogin } from "../services/Users/post";
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
       alert("Preencha todos os campos!");
       return;
     }
+    
+    // Adicione um estado de loading no topo do componente:
+// const [loading, setLoading] = useState(false);
+
+const handleLogin = async () => {
+  if (!email || !password) {
+    alert("Preencha todos os campos!");
+    return;
+  }
+
+  // Evita que o usuário clique várias vezes enquanto a requisição viaja
+  setLoading(true); 
+
+  try {
+    const objetoParaEnvio = { email, password };
+    
+    // O await trava a execução aqui. Se o servidor responder 401, 
+    // ele pula direto para o catch.
+    const resultado = await UserLogin(objetoParaEnvio);
+
+    // Se chegou aqui, o resultado é positivo (200 OK)
+    alert("Login realizado com sucesso!");
+    
+    // IMPORTANTE: Use replace para que o usuário não consiga "voltar" para o login
+    navigation.replace("Home");
+
+  } catch (error: any) {
+    // Aqui tratamos o erro 401 (Unauthorized)
+    console.error("Erro detectado:", error.message);
+    alert("E-mail ou senha incorretos. Tente novamente.");
+  } finally {
+    setLoading(false); // Libera o botão novamente
+  }
+};
 
     try {
-      // Montamos o objeto e enviamos para a função do outro arquivo
       const objetoParaEnvio = { email, password };
-      const resultado = UserLogin(objetoParaEnvio);
-      const userIdLogado = resultado.id;
+
+      // ADICIONADO O AWAIT: Agora o código para aqui até o servidor responder
+      const resultado = await UserLogin(objetoParaEnvio);
+
+      // Se o servidor retornar erro (401, 500, etc), o 'post.ts' vai lançar um erro
+      // e o código pulará direto para o 'catch', impedindo o código abaixo:
 
       alert("Login realizado com sucesso");
-
-      navigation.replace("Home", { userId: userIdLogado });
-    } catch (error) {
-      alert("Falha no login. Verifique seus dados ou o servidor.");
+      navigation.replace("Home");
+    } catch (error: any) {
+      // Aqui tratamos o erro 401 que você estava recebendo
+      console.error("Erro no login:", error);
+      alert(error.message || "Falha no login. Verifique seus dados.");
     }
   };
 
@@ -63,7 +102,7 @@ export default function LoginScreen({ navigation }: any) {
 
         <View style={styles.inputContainer}>
           <TextInput
-            style={{ flex: 1 }}
+            style={{ flex: 1, color: "#333" }} // Adicionado cor para visibilidade
             placeholder="Senha"
             secureTextEntry
             placeholderTextColor="#999"

@@ -84,7 +84,15 @@ export default function HomeScreen({ navigation }: any) {
         </View>
 
         {/* CARD PRINCIPAL */}
-        <View style={styles.card}>
+        loading ? (
+          <ActivityIndicator
+            size="small"
+            color="#1D355E"
+            style={{ marginTop: 20 }}
+          />
+        ) : (
+        conta.map((c, index) => (
+        <View style={styles.card} key={c.id || index}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardMonth}>MAIO / 2026</Text>
             <TouchableOpacity onPress={() => navigation.navigate("Orcamento")}>
@@ -107,6 +115,8 @@ export default function HomeScreen({ navigation }: any) {
             </View>
           </View>
         </View>
+        ));
+        )}
 
         {/* SEÇÃO DE LANÇAMENTOS */}
         <View style={styles.sectionHeader}>
