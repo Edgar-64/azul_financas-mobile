@@ -15,6 +15,10 @@ import { ContaGet } from "../services/Users/post";
 import { UserGet } from "../services/Users/post";
 
 export default function HomeScreen({ navigation }: any) {
+  const handleLogout = async () => {
+  await AsyncStorage.removeItem('@user_id');
+  navigation.replace("Login");
+};
   // 1. Inicialize como array vazio para evitar erro de .map is not a function
   const [pay, setPay] = useState<any[]>([]);
   const [conta, setConta] = useState<any[]>([]);
@@ -64,7 +68,7 @@ export default function HomeScreen({ navigation }: any) {
             </View>
           </View>
 
-          <TouchableOpacity onPress={() => navigation.replace("Login")}>
+          <TouchableOpacity onPress={(handleLogout) => navigation.replace("")}>
             <Ionicons name="log-out-outline" size={24} color="#333" />
           </TouchableOpacity>
         </View>
