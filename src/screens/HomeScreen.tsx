@@ -18,15 +18,17 @@ export default function HomeScreen({ navigation }: any) {
   const handleLogout = async () => {
   await AsyncStorage.removeItem('@user_id');
   navigation.replace("Login");
-};
-  // 1. Inicialize como array vazio para evitar erro de .map is not a function
-  const [pay, setPay] = useState<any[]>([]);
-  const [conta, setConta] = useState<any[]>([]);
-  const [user, setUser] = useState<any[]>([]);
+  };
+  
+  const id = await AsyncStorage.getItem('@user_id');
+  
+  const [pay, setPay] = useState([id]);
+  const [conta, setConta] = useState([id]);
+  const [user, setUser] = useState([id]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const carregarDadosIniciais = async () => {
+    const GET = async () => {
       setLoading(true);
       try {
         // Dispara as 3 chamadas ao mesmo tempo (mais rápido)
