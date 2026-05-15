@@ -8,7 +8,9 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
+  Alert,
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from "@expo/vector-icons";
 import { PayGet, UserLogin } from "../services/Users/post";
 import { ContaGet } from "../services/Users/post";
@@ -20,36 +22,39 @@ export default function HomeScreen({ navigation }: any) {
   navigation.replace("Login");
   };
   
-  const id = await AsyncStorage.getItem('@user_id');
-  
-  const [pay, setPay] = useState([id]);
-  const [conta, setConta] = useState([id]);
-  const [user, setUser] = useState([id]);
+  const [pay, setPay] = useState([]);
+  const [conta, setConta] = useState([]);
+  const [user, setUser] = useState([]);
+  const [id, setId] = useState();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const GET = async () => {
-      setLoading(true);
-      try {
-        // Dispara as 3 chamadas ao mesmo tempo (mais rápido)
-        const [resPay, resConta, resUser] = await Promise.all([
-          PayGet(1),
-          ContaGet(1),
-          UserGet(1),
-        ]);
+  const carregarTudo = async () => {
+    setLoading(true);
+    try {
+      const Uid = await AsyncStorage.getItem('@user_id');
+      
+      if (Uid) {
+        setId(Uid);
 
+        const [resPay, resConta, resUser] = await Promise.all([
+          PayGet(Uid),
+          ContaGet(Uid),
+          UserGet(Uid),
+        ]);
         setPay(Array.isArray(resPay) ? resPay : resPay.data || []);
         setConta(Array.isArray(resConta) ? resConta : resConta.data || []);
         setUser(Array.isArray(resUser) ? resUser : resUser.data || []);
-      } catch (error) {
-        console.error("Erro ao carregar dados da Home:", error);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    carregarDadosIniciais();
-  }, []);
+  carregarTudo();
+}, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -70,7 +75,7 @@ export default function HomeScreen({ navigation }: any) {
             </View>
           </View>
 
-          <TouchableOpacity onPress={(handleLogout) => navigation.replace("")}>
+          <TouchableOpacity onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={24} color="#333" />
           </TouchableOpacity>
         </View>
@@ -97,16 +102,18 @@ export default function HomeScreen({ navigation }: any) {
             style={{ marginTop: 20 }}
           />
         ) : (
-        conta.map((c, index) => (
-        <View style={styles.card} key={c.id || index}>
+        conta
+        .filter(c => String(c.userId) === String(id))
+        .map((c, index) => (
+        <View style={styles.card} key={c.contaId  || index}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardMonth}>MAIO / 2026</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Orcamento")}>
+            <TouchableOpacity onPress={() => navigation.navigate("Conta")}>
               <Ionicons name="settings-outline" size={20} color="#FFF" />
             </TouchableOpacity>
           </View>
           <Text style={styles.cardLabel}>Orçamento disponível</Text>
-          <Text style={styles.cardValue}>R$ 1.256,98</Text>
+          <Text style={styles.cardValue}>{c.saldo}</Text>
           <View style={styles.progressBar}>
             <View style={styles.progress} />
           </View>
@@ -121,7 +128,7 @@ export default function HomeScreen({ navigation }: any) {
             </View>
           </View>
         </View>
-        ));
+        ))
         )}
 
         {/* SEÇÃO DE LANÇAMENTOS */}
