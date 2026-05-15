@@ -1,4 +1,4 @@
-import React, { use, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserLogin } from "../services/Users/post";
 
 export default function LoginScreen({ navigation }: any) {
@@ -16,15 +17,42 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState("");
 
   async function entrar() {
-    const data = await UserLogin(
+    try {
+    const dados = await UserLogin({
       email,
       password
-      );
-    console.log(data);
-    const userId = data.user.id;
+    });
+    console.log(dados);
+    const userId = dados.user.id;
 
+    await AsyncStorage.setItem('@user_id', String(userId));
+    console.log("Usuário salvo com sucesso!");
+
+    navigation.navigate("Home");
     console.log(userId);
+    } catch(error){
+      Alert.alert("Erro", "E-mail ou senha inválidos");
+    }
   }
+
+
+  useEffect(() => {
+  const verificarLogin = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('@user_id');
+      
+      // Se o ID existir, o usuário já logou antes
+      if (userId !== null) {
+        // Vai direto para a Home sem o usuário precisar digitar nada
+        navigation.replace("Home"); 
+      }
+    } catch (error) {
+      console.log("Erro ao ler o AsyncStorage", error);
+    }
+  };
+
+  verificarLogin();
+}, []);
 
   return (
     <SafeAreaView style={styles.container}>
