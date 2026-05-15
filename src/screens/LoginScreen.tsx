@@ -16,9 +16,9 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState("");
 
   async function entrar() {
-    const data = await login(
+    const data = await UserLogin(
       email,
-      senha
+      password
       );
     console.log(data);
     const userId = data.user.id;
