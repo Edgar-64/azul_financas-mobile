@@ -14,65 +14,17 @@ import { UserLogin } from "../services/Users/post";
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      alert("Preencha todos os campos!");
-      return;
-    }
-    
-    // Adicione um estado de loading no topo do componente:
-// const [loading, setLoading] = useState(false);
+  async function entrar() {
+    const data = await login(
+      email,
+      senha
+      );
+    console.log(data);
+    const userId = data.user.id;
 
-const handleLogin = async () => {
-  if (!email || !password) {
-    alert("Preencha todos os campos!");
-    return;
+    console.log(userId);
   }
-
-  // Evita que o usuário clique várias vezes enquanto a requisição viaja
-  setLoading(true); 
-
-  try {
-    const objetoParaEnvio = { email, password };
-    
-    // O await trava a execução aqui. Se o servidor responder 401, 
-    // ele pula direto para o catch.
-    const resultado = await UserLogin(objetoParaEnvio);
-
-    // Se chegou aqui, o resultado é positivo (200 OK)
-    alert("Login realizado com sucesso!");
-    
-    // IMPORTANTE: Use replace para que o usuário não consiga "voltar" para o login
-    navigation.replace("Home");
-
-  } catch (error: any) {
-    // Aqui tratamos o erro 401 (Unauthorized)
-    console.error("Erro detectado:", error.message);
-    alert("E-mail ou senha incorretos. Tente novamente.");
-  } finally {
-    setLoading(false); // Libera o botão novamente
-  }
-};
-
-    try {
-      const objetoParaEnvio = { email, password };
-
-      // ADICIONADO O AWAIT: Agora o código para aqui até o servidor responder
-      const resultado = await UserLogin(objetoParaEnvio);
-
-      // Se o servidor retornar erro (401, 500, etc), o 'post.ts' vai lançar um erro
-      // e o código pulará direto para o 'catch', impedindo o código abaixo:
-
-      alert("Login realizado com sucesso");
-      navigation.replace("Home");
-    } catch (error: any) {
-      // Aqui tratamos o erro 401 que você estava recebendo
-      console.error("Erro no login:", error);
-      alert(error.message || "Falha no login. Verifique seus dados.");
-    }
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -120,7 +72,7 @@ const handleLogin = async () => {
         {/* Botão Entrar - Nome da rota: Home */}
         <TouchableOpacity
           style={styles.btnPrimary}
-          onPress={handleLogin}
+          onPress={entrar}
           activeOpacity={0.8}
         >
           <Text style={styles.btnText}>Entrar</Text>
