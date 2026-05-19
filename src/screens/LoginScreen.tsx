@@ -1,4 +1,4 @@
-import React, { use, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,67 +10,53 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { UserLogin } from "../services/Users/post";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [id, setUser] = useState("");
 
   const handleLogin = async () => {
     if (!email || !password) {
       alert("Preencha todos os campos!");
       return;
     }
-    
-    // Adicione um estado de loading no topo do componente:
-// const [loading, setLoading] = useState(false);
 
-const handleLogin = async () => {
-  if (!email || !password) {
-    alert("Preencha todos os campos!");
-    return;
-  }
-
-  // Evita que o usuário clique várias vezes enquanto a requisição viaja
-  setLoading(true); 
-
-  try {
-    const objetoParaEnvio = { email, password };
-    
-    // O await trava a execução aqui. Se o servidor responder 401, 
-    // ele pula direto para o catch.
-    const resultado = await UserLogin(objetoParaEnvio);
-
-    // Se chegou aqui, o resultado é positivo (200 OK)
-    alert("Login realizado com sucesso!");
-    
-    // IMPORTANTE: Use replace para que o usuário não consiga "voltar" para o login
-    navigation.replace("Home");
-
-  } catch (error: any) {
-    // Aqui tratamos o erro 401 (Unauthorized)
-    console.error("Erro detectado:", error.message);
-    alert("E-mail ou senha incorretos. Tente novamente.");
-  } finally {
-    setLoading(false); // Libera o botão novamente
-  }
-};
+    // Evita que o usuário clique várias vezes enquanto a requisição viaja
+    setLoading(true);
 
     try {
       const objetoParaEnvio = { email, password };
 
-      // ADICIONADO O AWAIT: Agora o código para aqui até o servidor responder
-      const resultado = await UserLogin(objetoParaEnvio);
+      // O await trava a execução aqui. Se o servidor responder 401,
+      // ele pula direto para o catch.
+      const resposta = await UserLogin(objetoParaEnvio);
 
-      // Se o servidor retornar erro (401, 500, etc), o 'post.ts' vai lançar um erro
-      // e o código pulará direto para o 'catch', impedindo o código abaixo:
+      if (resposta && resposta.user && resposta.user.id) {
+        const userId = resposta.user.id;
 
-      alert("Login realizado com sucesso");
-      navigation.replace("Home");
+        // 2. Salva o ID no AsyncStorage (precisa ser em formato String)
+        await AsyncStorage.setItem("@user_id", userId);
+
+        // Se sua API mandar token, é bom salvar também:
+        // await AsyncStorage.setItem("@user_token", resposta.token);
+
+        alert("Login realizado com sucesso!");
+
+        // 3. Navega para a tela principal
+        navigation.replace("Home");
+      } else {
+        alert("Erro ao processar dados de login do servidor.");
+      }
+      
     } catch (error: any) {
-      // Aqui tratamos o erro 401 que você estava recebendo
-      console.error("Erro no login:", error);
-      alert(error.message || "Falha no login. Verifique seus dados.");
+      // Aqui tratamos o erro 401 (Unauthorized)
+      console.error("Erro detectado:", error.message);
+      alert("E-mail ou senha incorretos. Tente novamente.");
+    } finally {
+      setLoading(false); // Libera o botão novamente
     }
   };
 

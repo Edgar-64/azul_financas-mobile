@@ -29,11 +29,13 @@ export default function CadastroScreen({ navigation }: any) {
     try {
       // Montamos o objeto e enviamos para a função do outro arquivo
       const objetoParaEnvio = { name, email, password };
-      const resultado = UserCadastro(objetoParaEnvio);
+      const resultado = await UserCadastro(objetoParaEnvio);
 
       alert("Cadastro realizado com sucesso");
+      navigation.navigate("Login");
     } catch (error) {
       alert("Falha no login. Verifique seus dados ou o servidor.");
+      console.error(error);
     }
   }
 };

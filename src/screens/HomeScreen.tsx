@@ -13,36 +13,97 @@ import { Ionicons } from "@expo/vector-icons";
 import { PayGet, UserLogin } from "../services/Users/post";
 import { ContaGet } from "../services/Users/post";
 import { UserGet } from "../services/Users/post";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ContaPost } from "../services/Users/post";
 
 export default function HomeScreen({ navigation }: any) {
   // 1. Inicialize como array vazio para evitar erro de .map is not a function
   const [pay, setPay] = useState<any[]>([]);
   const [conta, setConta] = useState<any[]>([]);
   const [user, setUser] = useState<any[]>([]);
+  const [userId, setuserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const carregarDadosIniciais = async () => {
-      setLoading(true);
-      try {
-        // Dispara as 3 chamadas ao mesmo tempo (mais rápido)
-        const [resPay, resConta, resUser] = await Promise.all([
-          PayGet(1),
-          ContaGet(1),
-          UserGet(1),
-        ]);
+  const handleLogin = async () => {
+    const saldo = Number(0.01);
+    const userId = Number(await AsyncStorage.getItem("@user_id"));
 
-        setPay(Array.isArray(resPay) ? resPay : resPay.data || []);
-        setConta(Array.isArray(resConta) ? resConta : resConta.data || []);
-        setUser(Array.isArray(resUser) ? resUser : resUser.data || []);
+    // Evita que o usuário clique várias vezes enquanto a requisição viaja
+    setLoading(true);
+
+    try {
+      const objetoParaEnvio = { saldo, userId };
+
+      // O await trava a execução aqui. Se o servidor responder 401,
+      // ele pula direto para o catch.
+      const resposta = await ContaPost(objetoParaEnvio);
+      alert("Conta criada, Porfavor reinicie o App");
+      
+    } catch (error: any) {
+      // Aqui tratamos o erro 401 (Unauthorized)
+      console.error("Erro detectado:", error.message);
+      alert("Tente novamente.");
+    } finally {
+      setLoading(false); // Libera o botão novamente
+    }
+  };
+
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem("@user_id");
+    navigation.replace("Login"); // Manda de volta para o Login
+  };
+
+  useEffect(() => {
+    const buscarIdSalvo = async () => {
+      try {
+        const userId = await AsyncStorage.getItem("@user_id");
+        const query = "";
+        if (userId !== null) {
+          setuserId(userId);
+          const carregarDadosIniciais = async () => {
+            setLoading(true);
+            try {
+              // Dispara as 3 chamadas ao mesmo tempo (mais rápido)
+              const [resPay, resConta, resUser] = await Promise.all([
+                PayGet(userId, query || ""),
+                ContaGet(userId || ""),
+                UserGet(userId || ""),
+              ]);
+
+              console.log("RESCONTA ORIGINAL:", resConta);
+
+              setPay(Array.isArray(resPay) ? resPay : resPay.data || []);
+              setUser(Array.isArray(resUser) ? resUser : resUser.data || []);
+              if (Array.isArray(resConta)) {
+                setConta(resConta);
+              } else if (resConta && resConta.data) {
+                // Se vier dentro de .data e for array, ou se for objeto envelopa num array
+                setConta(
+                  Array.isArray(resConta.data)
+                    ? resConta.data
+                    : [resConta.data],
+                );
+              } else if (resConta) {
+                // Se o 'resConta' for o objeto direto da conta, envelopa ele em um array
+                setConta([resConta]);
+              } else {
+                setConta([]);
+              }
+            } catch (error) {
+              console.error("Erro ao carregar dados da Home:", error);
+            } finally {
+              setLoading(false);
+            }
+          };
+
+          carregarDadosIniciais();
+        }
       } catch (error) {
-        console.error("Erro ao carregar dados da Home:", error);
-      } finally {
-        setLoading(false);
+        console.error("Erro ao buscar o ID local", error);
       }
     };
 
-    carregarDadosIniciais();
+    buscarIdSalvo();
   }, []);
 
   return (
@@ -64,59 +125,99 @@ export default function HomeScreen({ navigation }: any) {
             </View>
           </View>
 
-          <TouchableOpacity onPress={() => navigation.replace("Login")}>
+          <TouchableOpacity onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={24} color="#333" />
           </TouchableOpacity>
         </View>
 
         <Text style={styles.subtitle}>Vamos organizar suas finanças?</Text>
 
-        {/* SELETOR DE MESES */}
-        <View style={styles.months}>
-          {["MAR", "ABR", "MAI", "JUN", "JUL"].map((m, i) => (
-            <TouchableOpacity key={i} style={styles.monthButton}>
-              <Text style={[styles.month, m === "MAI" && styles.activeMonth]}>
-                {m}
-              </Text>
-              {m === "MAI" && <View style={styles.activeIndicator} />}
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* CARD PRINCIPAL */}
-        loading ? (
-          <ActivityIndicator
-            size="small"
-            color="#1D355E"
-            style={{ marginTop: 20 }}
-          />
-        ) : (
-        conta.map((c, index) => (
-        <View style={styles.card} key={c.id || index}>
+        <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardMonth}>MAIO / 2026</Text>
             <TouchableOpacity onPress={() => navigation.navigate("Orcamento")}>
               <Ionicons name="settings-outline" size={20} color="#FFF" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.cardLabel}>Orçamento disponível</Text>
-          <Text style={styles.cardValue}>R$ 1.256,98</Text>
-          <View style={styles.progressBar}>
-            <View style={styles.progress} />
-          </View>
-          <View style={styles.rowInfo}>
+
+          <Text style={styles.cardLabel}>Saldo disponível</Text>
+
+          {loading ? (
+            <ActivityIndicator
+              size="small"
+              color="#1D355E"
+              style={{ marginTop: 20 }}
+            />
+          ) : conta && conta.length > 0 ? (
+            conta.map((item, index) => (
+              <View key={item.userId || item.idConta || index}>
+                {/* Exibe o Saldo formatado */}
+                <Text style={styles.cardValue}>
+                  {typeof item.saldo === "number"
+                    ? `R$ ${item.saldo.toFixed(2)}`
+                    : item.saldo || "R$ 0,00"}
+                </Text>
+                <TouchableOpacity
+                  style={styles.monthButton}
+                  onPress={() =>
+                    navigation.navigate("NovoLancamento", {
+                      idConta: item.idConta,
+                    })
+                  }
+                >
+                  <Text style={{ color: "#FFF", fontWeight: "bold" }}>
+                    Novo Pagamento
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          ) : (
+            /* Caso a API retorne um array vazio [] */
             <View>
-              <Text style={styles.infoLabel}>Usado</Text>
-              <Text style={styles.infoValue}>R$ 2.943,02</Text>
+              <Text style={styles.cardValue}>R$ 0,00</Text>
+              <Text style={{ color: "rgba(255, 255, 255, 0.7)", fontSize: 12 }}>
+                Nenhuma conta vinculada. 
+                <TouchableOpacity onPress={handleLogin}>
+                  <Text> Faça já a sua!</Text>
+                </TouchableOpacity>
+              </Text>
             </View>
+          )}
+
+          {/*<View style={styles.rowInfo}>
             <View style={{ alignItems: "flex-end" }}>
               <Text style={styles.infoLabel}>Limite</Text>
-              <Text style={styles.infoValue}>R$ 4.200,00</Text>
+              {loading ? (
+                <ActivityIndicator
+                  size="small"
+                  color="#1D355E"
+                  style={{ marginTop: 20 }}
+                />
+              ) : caixa && caixa.length > 0 ? (
+                caixa.map((caixa, index) => (
+                  <View key={caixa.userId || caixa.idCaixa || index}>
+                    {/* Exibe o Saldo formatado 
+                    <Text style={styles.infoValue}>
+                      {typeof caixa.valorMove === "number"
+                        ? `R$ ${caixa.valorMove.toFixed(2)}`
+                        : caixa.valorMove || "R$ 0,00"}
+                    </Text>
+                  </View>
+                ))
+              ) : (
+                /* Caso a API retorne um array vazio [] 
+                <View>
+                  <Text style={styles.cardValue}>R$ 0,00</Text>
+                  <Text
+                    style={{ color: "rgba(255, 255, 255, 0.7)", fontSize: 12 }}
+                  >
+                    Nenhuma conta vinculada
+                  </Text>
+                </View>
+              )}
             </View>
-          </View>
+          </View>*/}
         </View>
-        ));
-        )}
 
         {/* SEÇÃO DE LANÇAMENTOS */}
         <View style={styles.sectionHeader}>

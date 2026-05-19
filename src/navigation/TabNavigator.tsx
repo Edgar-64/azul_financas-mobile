@@ -58,6 +58,7 @@ export default function TabNavigator() {
                 activeOpacity={0.8}
                 onPress={() => navigation.navigate("NovoLancamento")}
                 style={styles.plusButton}
+                
               >
                 <Ionicons name="add" size={35} color="#FFF" />
               </TouchableOpacity>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,25 +9,117 @@ import {
   Modal,
   TextInput,
   Alert,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { DrawerActions } from '@react-navigation/native'; // Importante para o hambúrguer
+import { DrawerActions } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CaixaGet } from '../services/Users/post'; // Certifique-se de que o caminho está correto
 
 export default function CaixinhasScreen({ navigation }: any) {
-  const [metas, setMetas] = useState([
-    { id: '1', nome: 'Reserva de Emergência', guardado: 2500, meta: 5000, icone: 'shield-checkmark', cor: '#16A34A' },
-    { id: '2', nome: 'Trocar de Carro', guardado: 12000, meta: 45000, icone: 'car', cor: '#2563EB' },
-    { id: '3', nome: 'Viagem de Fim de Ano', guardado: 3000, meta: 3000, icone: 'airplane', cor: '#7C3AED' },
-  ]);
+  // Estado para armazenar os dados reais vindos do banco de dados
+  const [caixas, setCaixas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // Estados para os Modais de Ações
   const [modalAcaoVisible, setModalAcaoVisible] = useState(false);
   const [modalInputVisible, setModalInputVisible] = useState(false);
   const [selectedId, setSelectedId] = useState('');
   const [tipoOperacao, setTipoOperacao] = useState<'guardar' | 'resgatar'>('guardar');
   const [valorInput, setValorInput] = useState('');
 
-  const caixinhaSelecionada = metas.find(m => m.id === selectedId);
+  // Estados para o Modal de Criar Nova Caixinha (O BOTÃO DO +)
+  const [modalCriarVisible, setModalCriarVisible] = useState(false);
+  const [novaMeta, setNovaMeta] = useState('');
+  const [novaAlvo, setNovaAlvo] = useState('');
+  const [novaCaixa, setNovaCaixa] = useState('');
+  const [novaMove, setNovaMove] = useState('');
+  const [novaValor, setNovaValor] = useState('');
+
+  // Busca o registro selecionado dentro da lista vinda do banco (usando idCaixa ou id)
+  const caixinhaSelecionada = caixas.find(m => (m.idCaixa?.toString() || m.id?.toString()) === selectedId);
+
+  // FUNÇÃO MÁSCARA: Transforma números digitados em formato "1.234,56"
+  const formatarMoeda = (texto: string) => {
+    const apenasNumeros = texto.replace(/\D/g, '');
+    if (!apenasNumeros) return '';
+    const valorNum = parseFloat(apenasNumeros) / 100;
+    return valorNum.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
+  const handleLogin = async () => {
+
+    // Evita que o usuário clique várias vezes enquanto a requisição viaja
+    setLoading(true);
+
+    try {
+      const objetoParaEnvio = { alvo: novaAlvo, caixa: novaCaixa, meta: novaMeta, move: novaMove, valormove: novaValor };
+
+      // O await trava a execução aqui. Se o servidor responder 401,
+      // ele pula direto para o catch.
+      const resposta = await CaixaGet(objetoParaEnvio);
+
+      if (resposta && resposta.user && resposta.user.id) {
+        const userId = resposta.user.id;
+
+        // 2. Salva o ID no AsyncStorage (precisa ser em formato String)
+        await AsyncStorage.setItem("@user_id", userId);
+
+        // Se sua API mandar token, é bom salvar também:
+        // await AsyncStorage.setItem("@user_token", resposta.token);
+
+        alert("Login realizado com sucesso!");
+
+        // 3. Navega para a tela principal
+        navigation.replace("Home");
+      } else {
+        alert("Erro ao processar dados de login do servidor.");
+      }
+      
+    } catch (error: any) {
+      // Aqui tratamos o erro 401 (Unauthorized)
+      console.error("Erro detectado:", error.message);
+      alert("E-mail ou senha incorretos. Tente novamente.");
+    } finally {
+      setLoading(false); // Libera o botão novamente
+    }
+  };
+
+  // FUNÇÃO AUXILIAR: Converte a string mascarada de volta para número puro (Float)
+  const converterParaNumero = (textoMascarada: string) => {
+    if (!textoMascarada) return 0;
+    const limpo = textoMascarada.replace(/\./g, '').replace(',', '.');
+    return parseFloat(limpo);
+  };
+
+  // Função para buscar dados da API
+  const carregarCaixinhas = async () => {
+    setLoading(true);
+    try {
+      const idSalvo = await AsyncStorage.getItem("@user_id");
+      if (idSalvo !== null) {
+        const resCaixa = await CaixaGet(idSalvo);
+        // Garante que o retorno seja tratado como uma lista/array
+        setCaixas(Array.isArray(resCaixa) ? resCaixa : resCaixa?.data || []);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar caixinhas do banco:", error);
+      Platform.OS === 'web' 
+        ? window.alert("Não foi possível carregar as caixinhas.") 
+        : Alert.alert("Erro", "Não foi possível carregar as caixinhas.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Carrega os dados assim que o usuário entra na tela
+  useEffect(() => {
+    carregarCaixinhas();
+  }, []);
 
   const abrirOpcoes = (id: string) => {
     setSelectedId(id);
@@ -49,21 +141,25 @@ export default function CaixinhasScreen({ navigation }: any) {
       return;
     }
 
-    setMetas(prev => prev.map(m => {
-      if (m.id === selectedId) {
+    setCaixas(prev => prev.map(m => {
+      const currentId = (m.idCaixa || m.id)?.toString();
+      const saldoAtual = Number(m.valor || 0);
+      const metaAtual = Number(m.meta || 0);
+
+      if (currentId === selectedId) {
         if (tipoOperacao === 'guardar') {
-          const novoSaldo = m.guardado + valorNum;
-          if (novoSaldo > m.meta) {
+          const novoSaldo = saldoAtual + valorNum;
+          if (novoSaldo > metaAtual) {
             Platform.OS === 'web' ? window.alert("Limite atingido") : Alert.alert("Limite atingido", "O valor excedeu a meta.");
-            return { ...m, guardado: m.meta };
+            return { ...m, valor: metaAtual };
           }
-          return { ...m, guardado: novoSaldo };
+          return { ...m, valor: novoSaldo };
         } else {
-          if (valorNum > m.guardado) {
-            Platform.OS === 'web' ? window.alert("Saldo Insuficiente") : Alert.alert("Saldo Insuficiente", `Disponível: R$ ${m.guardado.toFixed(2)}`);
+          if (valorNum > saldoAtual) {
+            Platform.OS === 'web' ? window.alert("Saldo Insuficiente") : Alert.alert("Saldo Insuficiente", `Disponível: R$ ${saldoAtual.toFixed(2)}`);
             return m;
           }
-          return { ...m, guardado: m.guardado - valorNum };
+          return { ...m, valor: saldoAtual - valorNum };
         }
       }
       return m;
@@ -72,17 +168,45 @@ export default function CaixinhasScreen({ navigation }: any) {
     setModalInputVisible(false);
   };
 
-  const totalGeral = metas.reduce((acc, curr) => acc + curr.guardado, 0);
+  // Função disparada ao clicar em Criar dentro do Modal do Botão +
+  const criarNovaCaixinhaLocal = () => {
+    const metaNum = converterParaNumero(novaMeta);
+    if (!novoNome.trim() || isNaN(metaNum) || metaNum <= 0) {
+      Platform.OS === 'web' ? window.alert("Preencha os dados corretamente.") : Alert.alert("Erro", "Preencha os dados corretamente.");
+      return;
+    }
+
+    const nova = {
+      idCaixa: Math.random().toString(),
+      alvo: novoNome,
+      valor: 0,
+      meta: metaNum,
+    };
+
+    // Dica: No futuro, adicione aqui o seu serviço de POST (ex: CaixaPost) para salvar de verdade no banco de dados.
+    setCaixas((prev) => [...prev, nova]);
+    setNovoNome("");
+    setNovaMeta("");
+    setModalCriarVisible(false);
+  };
+
+  // Cálculo dinâmico do total acumulado baseado nas caixinhas do banco de dados
+  const totalGeral = caixas.reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* HEADER CORRIGIDO COM VOLTAR E HAMBURGUER */}
+      {/* HEADER CORRIGIDO COM O BOTÃO "+" */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIcon}>
           <Ionicons name="chevron-back" size={28} color="#333" />
         </TouchableOpacity>
         
-        <Text style={styles.headerTitle}>CAIXINHAS</Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>CAIXINHAS</Text>
+          <TouchableOpacity style={styles.btnAddHeader} onPress={() => setModalCriarVisible(true)}>
+            <Ionicons name="add" size={20} color="#1D355E" />
+          </TouchableOpacity>
+        </View>
         
         <TouchableOpacity 
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())} 
@@ -92,45 +216,75 @@ export default function CaixinhasScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.totalCard}>
-          <Text style={styles.totalLabel}>Total guardado</Text>
-          <Text style={styles.totalValue}>R$ {totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</Text>
+      {/* RENDERIZAÇÃO DOS DADOS */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1D355E" />
+          <Text style={styles.loadingText}>Carregando suas metas...</Text>
         </View>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.totalCard}>
+            <Text style={styles.totalLabel}>Total guardado</Text>
+            <Text style={styles.totalValue}>
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalGeral)}
+            </Text>
+          </View>
 
-        {metas.map((item) => {
-          const progresso = (item.guardado / item.meta) * 100;
-          const metaAtingida = item.guardado >= item.meta;
+          {caixas.length === 0 ? (
+            <Text style={styles.emptyText}>Nenhuma caixinha cadastrada no momento.</Text>
+          ) : (
+            caixas.map((item, index) => {
+              const currentId = (item.idCaixa || item.id || index).toString();
+              const guardado = Number(item.valor || 0);
+              const meta = Number(item.meta || 1); // Evita divisão por zero
+              const progresso = (guardado / meta) * 100;
+              const metaAtingida = guardado >= meta;
 
-          return (
-            <TouchableOpacity key={item.id} style={styles.metaItem} onPress={() => abrirOpcoes(item.id)}>
-              <View style={styles.metaTop}>
-                <View style={styles.iconCircle}><Ionicons name={item.icone as any} size={22} color="#1D355E" /></View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.metaNome}>{item.nome}</Text>
-                  <Text style={metaAtingida ? styles.metaAtingidaText : styles.metaStatus}>
-                    {metaAtingida ? "Meta Atingida!" : `R$ ${item.guardado.toFixed(2)} / R$ ${item.meta.toFixed(2)}`}
-                  </Text>
-                </View>
-                <Text style={styles.percentText}>{progresso.toFixed(0)}%</Text>
-              </View>
-              <View style={styles.progressContainer}>
-                <View style={[styles.progressBar, { 
-                    width: `${progresso > 100 ? 100 : progresso}%`, 
-                    backgroundColor: metaAtingida ? '#16A34A' : item.cor 
-                }]} />
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+              // Fallbacks de ícones baseados em palavras-chave da meta
+              let iconeDinamico = 'cash-outline';
+              if (item.alvo?.toLowerCase().includes('carro')) iconeDinamico = 'car';
+              if (item.alvo?.toLowerCase().includes('viagem') || item.alvo?.toLowerCase().includes('praia')) iconeDinamico = 'airplane';
+              if (item.alvo?.toLowerCase().includes('reserva') || item.alvo?.toLowerCase().includes('emergência')) iconeDinamico = 'shield-checkmark';
+
+              return (
+                <TouchableOpacity key={currentId} style={styles.metaItem} onPress={() => abrirOpcoes(currentId)}>
+                  <View style={styles.metaTop}>
+                    <View style={styles.iconCircle}>
+                      <Ionicons name={iconeDinamico as any} size={22} color="#1D355E" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.metaNome}>{item.alvo || "Meta sem nome"}</Text>
+                      <Text style={metaAtingida ? styles.metaAtingidaText : styles.metaStatus}>
+                        {metaAtingida 
+                          ? "Meta Atingida!" 
+                          : `${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(guardado)} / ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(meta)}`
+                        }
+                      </Text>
+                    </View>
+                    <Text style={styles.percentText}>{progresso.toFixed(0)}%</Text>
+                  </View>
+                  <View style={styles.progressContainer}>
+                    <View style={[styles.progressBar, { 
+                        width: `${progresso > 100 ? 100 : progresso}%`, 
+                        backgroundColor: metaAtingida ? '#16A34A' : '#2563EB' 
+                    }]} />
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
+        </ScrollView>
+      )}
 
       {/* MENU DE AÇÕES */}
       <Modal visible={modalAcaoVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <TouchableOpacity style={{flex: 1, width: '100%'}} onPress={() => setModalAcaoVisible(false)} />
           <View style={styles.menuContent}>
-            <Text style={styles.menuTitle}>Saldo: R$ {caixinhaSelecionada?.guardado.toFixed(2)}</Text>
+            <Text style={styles.menuTitle}>
+              Saldo atual: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(caixinhaSelecionada?.valor || 0))}
+            </Text>
             <TouchableOpacity style={styles.menuBtn} onPress={() => prepararOperacao('guardar')}>
               <Ionicons name="add-circle-outline" size={22} color="#1D355E" /><Text style={styles.menuBtnText}>Guardar Dinheiro</Text>
             </TouchableOpacity>
@@ -148,7 +302,10 @@ export default function CaixinhasScreen({ navigation }: any) {
           <View style={styles.inputCard}>
             <Text style={styles.modalTitle}>{tipoOperacao === 'guardar' ? 'Quanto quer guardar?' : 'Quanto quer resgatar?'}</Text>
             <Text style={styles.infoSaldo}>
-              {tipoOperacao === 'resgatar' ? `Disponível: R$ ${caixinhaSelecionada?.guardado.toFixed(2)}` : `Meta: R$ ${caixinhaSelecionada?.meta.toFixed(2)}`}
+              {tipoOperacao === 'resgatar' 
+                ? `Disponível: R$ ${Number(caixinhaSelecionada?.valor || 0).toFixed(2)}` 
+                : `Meta: R$ ${Number(caixinhaSelecionada?.meta || 0).toFixed(2)}`
+              }
             </Text>
             <TextInput 
               style={styles.input} 
@@ -161,6 +318,64 @@ export default function CaixinhasScreen({ navigation }: any) {
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.btnCancel} onPress={() => setModalInputVisible(false)}><Text>Cancelar</Text></TouchableOpacity>
               <TouchableOpacity style={styles.btnSave} onPress={confirmarOperacao}><Text style={{color:'#FFF', fontWeight:'bold'}}>Confirmar</Text></TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL DE POP-UP PARA CRIAR NOVA CAIXINHA */}
+      <Modal visible={modalCriarVisible} transparent animationType="fade" onRequestClose={() => setModalCriarVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.inputCard}>
+            <Text style={[styles.modalTitle, { fontSize: 18, marginBottom: 20 }]}>Nova Caixinha</Text>
+            
+            <TextInput
+              style={styles.formInput}
+              placeholder="Nome do seu objetivo (Ex: Carro)"
+              placeholderTextColor="#999"
+              value={novoAlvo}
+              onChangeText={setNovoAlvo}
+            />
+
+            <TextInput
+              style={styles.formInput}
+              placeholder="Valor da Meta (R$ 0,00)"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              value={novaMeta}
+              onChangeText={setNovaMeta}
+            />
+
+            <TextInput
+              style={styles.formInput}
+              placeholder="Valor da Meta (R$ 0,00)"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              value={novaCaixa}
+              onChangeText={setNovaCaixa}
+            />
+
+            <TextInput
+              style={styles.formInput}
+              placeholder="Valor da Meta (R$ 0,00)"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              value={novaMove}
+              onChangeText={(t) => setNovaMove(formatarMoeda(t))}
+            />
+            
+            <TextInput
+              style={styles.formInput}
+              placeholder="Valor da Meta (R$ 0,00)"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              value={novaValor}
+              onChangeText={setNovaValor}
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.btnCancel} onPress={() => setModalCriarVisible(false)}><Text style={{ color: '#666' }}>Cancelar</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.btnSave} onPress={criarNovaCaixinhaLocal}><Text style={{ color: '#FFF', fontWeight: 'bold' }}>Criar</Text></TouchableOpacity>
             </View>
           </View>
         </View>
@@ -179,19 +394,25 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: '#FFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#EEE'
+    borderBottomColor: '#EEE',
+    paddingTop: Platform.OS === "ios" ? 40 : 12
   },
-  headerIcon: { padding: 5 },
-  headerTitle: { fontWeight: 'bold', fontSize: 16, color: '#333' },
+  headerIcon: { width: 40, alignItems: "center", justifyContent: "center", padding: 5 },
+  headerCenter: { flexDirection: "row", alignItems: "center", justifyContent: "center", flex: 1 },
+  headerTitle: { fontWeight: 'bold', fontSize: 16, color: '#333', letterSpacing: 0.5 },
+  btnAddHeader: { backgroundColor: '#F1F5F9', padding: 6, borderRadius: 8, marginLeft: 10, alignItems: 'center', justifyContent: 'center' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 10, color: '#1D355E', fontWeight: '500' },
+  emptyText: { textAlign: 'center', marginTop: 40, color: '#666', fontSize: 14 },
   totalCard: { backgroundColor: '#111', margin: 20, borderRadius: 20, padding: 25 },
   totalLabel: { color: '#AAA' },
   totalValue: { color: '#FFF', fontSize: 32, fontWeight: 'bold' },
   metaItem: { backgroundColor: '#FFF', marginHorizontal: 20, borderRadius: 15, padding: 15, marginBottom: 15, elevation: 2 },
   metaTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   iconCircle: { width: 40, height: 40, backgroundColor: '#F1F5F9', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  metaNome: { fontWeight: 'bold' },
-  metaStatus: { fontSize: 11, color: '#999' },
-  metaAtingidaText: { fontSize: 11, color: '#16A34A', fontWeight: 'bold' },
+  metaNome: { fontWeight: 'bold', fontSize: 15, color: '#1D355E' },
+  metaStatus: { fontSize: 12, color: '#666', marginTop: 2 },
+  metaAtingidaText: { fontSize: 12, color: '#16A34A', fontWeight: 'bold', marginTop: 2 },
   percentText: { fontWeight: 'bold', color: '#1D355E' },
   progressContainer: { height: 6, backgroundColor: '#EEE', borderRadius: 3, overflow: 'hidden' },
   progressBar: { height: '100%' },
@@ -202,11 +423,12 @@ const styles = StyleSheet.create({
   menuBtnText: { marginLeft: 15, fontWeight: 'bold', fontSize: 16, color: '#1D355E' },
   btnClose: { marginTop: 10, alignItems: 'center', padding: 15 },
   btnCloseText: { color: '#999', fontWeight: 'bold' },
-  inputCard: { backgroundColor: '#FFF', width: '85%', borderRadius: 20, padding: 25, alignItems: 'center' },
-  modalTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 5 },
+  inputCard: { backgroundColor: '#FFF', width: '85%', borderRadius: 20, padding: 25, alignItems: 'center', elevation: 5 },
+  modalTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 5, color: '#1D355E' },
   infoSaldo: { fontSize: 13, color: '#666', marginBottom: 20 },
   input: { borderBottomWidth: 2, borderBottomColor: '#1D355E', width: '100%', fontSize: 24, textAlign: 'center', marginBottom: 25 },
+  formInput: { backgroundColor: '#F8FAFC', width: '100%', borderRadius: 12, padding: 15, fontSize: 15, marginBottom: 15, borderWidth: 1, borderColor: '#E2E8F0', color: '#333' },
   modalButtons: { flexDirection: 'row', width: '100%', justifyContent: 'space-between' },
-  btnCancel: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  btnSave: { flex: 1, backgroundColor: '#1D355E', padding: 15, borderRadius: 12, alignItems: 'center' }
+  btnCancel: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
+  btnSave: { flex: 1.3, backgroundColor: '#1D355E', padding: 15, borderRadius: 12, alignItems: 'center' }
 });

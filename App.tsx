@@ -15,6 +15,7 @@ import EditarPerfilScreen from "./src/screens/EditarPerfilScreen";
 import AlterarSenhaScreen from "./src/screens/AlterarSenhaScreen";
 import ExcluirContaScreen from "./src/screens/ExcluirContaScreen";
 import CaixinhasScreen from "./src/screens/CaixinhasScreen";
+import ContaScreen from "./src/screens/ContaScreen";
 
 const Stack = createStackNavigator();
 
@@ -35,6 +36,7 @@ export default function App() {
         <Stack.Screen name="Orcamento" component={OrcamentoScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
         <Stack.Screen name="Caixinhas" component={CaixinhasScreen} />
+        <Stack.Screen name="Conta" component={ContaScreen} />
         <Stack.Screen name="Perfil" component={PerfilScreen} />
         <Stack.Screen name="EditarPerfil" component={EditarPerfilScreen} />
         <Stack.Screen name="AlterarSenha" component={AlterarSenhaScreen} />
