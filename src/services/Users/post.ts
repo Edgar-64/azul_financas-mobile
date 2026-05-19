@@ -53,3 +53,5 @@ export const ContaGet = (userId: string | number) => apiRequest("GET", `/conta/$
 export const ContaPost = (dados: any) => apiRequest("POST", "/Conta/conta", dados);
 export const UserGet = (userId: string | number) => apiRequest("GET", `/users/${userId}`);
 export const CaixaGet = (userId: string | number) => apiRequest("GET", `/caixa/${userId}`);
+export const CaixaPostGuardar = (dados: any) => apiRequest("GET", `/caixa/guardar`);
+export const CaixaPostRecuperar = (dados: any) => apiRequest("GET", `/caixa/recuperar`);
