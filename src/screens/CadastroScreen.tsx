@@ -18,15 +18,9 @@ export default function CadastroScreen({ navigation }: any) {
   const [senha, setSenha] = useState("");
   const [email, setEmail] = useState("");
 
-  const handleCadastro = async () => {
-    if (!name || !email || !password) {
-      alert("Preencha todos os campos!");
-      return;
-    }
-
-    if (password == senha) {
-
+  async function cadastrar() {
     try {
+<<<<<<< HEAD
       // Montamos o objeto e enviamos para a função do outro arquivo
       const objetoParaEnvio = { name, email, password };
       const resultado = await UserCadastro(objetoParaEnvio);
@@ -36,9 +30,21 @@ export default function CadastroScreen({ navigation }: any) {
     } catch (error) {
       alert("Falha no login. Verifique seus dados ou o servidor.");
       console.error(error);
+=======
+      const dados = await UserCadastro({
+        name,
+        email,
+        password
+      });
+      console.log(dados);
+      
+    navigation.navigate("Login");
+    console.log(userId);
+    } catch(error){
+      Alert.alert("Erro", "E-mail ou senha inválidos");
+>>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
     }
   }
-};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -103,7 +109,7 @@ export default function CadastroScreen({ navigation }: any) {
           {/* Botão Cadastrar - Nome da rota: Home */}
           <TouchableOpacity
             style={styles.btnPrimary}
-            onPress={(handleCadastro)}
+            onPress={(cadastrar)}
             activeOpacity={0.8}
           >
             <Text style={styles.btnText}>Cadastre-se</Text>

@@ -8,7 +8,9 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
+  Alert,
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from "@expo/vector-icons";
 import { PayGet, UserLogin } from "../services/Users/post";
 import { ContaGet } from "../services/Users/post";
@@ -17,6 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ContaPost } from "../services/Users/post";
 
 export default function HomeScreen({ navigation }: any) {
+<<<<<<< HEAD
   // 1. Inicialize como array vazio para evitar erro de .map is not a function
   const [pay, setPay] = useState<any[]>([]);
   const [conta, setConta] = useState<any[]>([]);
@@ -100,11 +103,51 @@ export default function HomeScreen({ navigation }: any) {
         }
       } catch (error) {
         console.error("Erro ao buscar o ID local", error);
-      }
-    };
+=======
+  const handleLogout = async () => {
+  await AsyncStorage.removeItem('@user_id');
+  navigation.replace("Login");
+  };
+  
+  const [pay, setPay] = useState([]);
+  const [conta, setConta] = useState([]);
+  const [user, setUser] = useState([]);
+  const [id, setId] = useState();
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+  const carregarTudo = async () => {
+    setLoading(true);
+    try {
+      const Uid = await AsyncStorage.getItem('@user_id');
+      
+      if (Uid) {
+        setId(Uid);
+
+        const [resPay, resConta, resUser] = await Promise.all([
+          PayGet(Uid),
+          ContaGet(Uid),
+          UserGet(Uid),
+        ]);
+        setPay(Array.isArray(resPay) ? resPay : resPay.data || []);
+        setConta(Array.isArray(resConta) ? resConta : resConta.data || []);
+        setUser(Array.isArray(resUser) ? resUser : resUser.data || []);
+>>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+<<<<<<< HEAD
     buscarIdSalvo();
   }, []);
+=======
+  carregarTudo();
+}, []);
+>>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
 
   return (
     <SafeAreaView style={styles.container}>
@@ -132,13 +175,41 @@ export default function HomeScreen({ navigation }: any) {
 
         <Text style={styles.subtitle}>Vamos organizar suas finanças?</Text>
 
+<<<<<<< HEAD
         <View style={styles.card}>
+=======
+        {/* SELETOR DE MESES */}
+        <View style={styles.months}>
+          {["MAR", "ABR", "MAI", "JUN", "JUL"].map((m, i) => (
+            <TouchableOpacity key={i} style={styles.monthButton}>
+              <Text style={[styles.month, m === "MAI" && styles.activeMonth]}>
+                {m}
+              </Text>
+              {m === "MAI" && <View style={styles.activeIndicator} />}
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* CARD PRINCIPAL */}
+        loading ? (
+          <ActivityIndicator
+            size="small"
+            color="#1D355E"
+            style={{ marginTop: 20 }}
+          />
+        ) : (
+        conta
+        .filter(c => String(c.userId) === String(id))
+        .map((c, index) => (
+        <View style={styles.card} key={c.contaId  || index}>
+>>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
           <View style={styles.cardHeader}>
             <Text style={styles.cardMonth}>MAIO / 2026</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Orcamento")}>
+            <TouchableOpacity onPress={() => navigation.navigate("Conta")}>
               <Ionicons name="settings-outline" size={20} color="#FFF" />
             </TouchableOpacity>
           </View>
+<<<<<<< HEAD
 
           <Text style={styles.cardLabel}>Saldo disponível</Text>
 
@@ -173,6 +244,14 @@ export default function HomeScreen({ navigation }: any) {
             ))
           ) : (
             /* Caso a API retorne um array vazio [] */
+=======
+          <Text style={styles.cardLabel}>Orçamento disponível</Text>
+          <Text style={styles.cardValue}>{c.saldo}</Text>
+          <View style={styles.progressBar}>
+            <View style={styles.progress} />
+          </View>
+          <View style={styles.rowInfo}>
+>>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
             <View>
               <Text style={styles.cardValue}>R$ 0,00</Text>
               <Text style={{ color: "rgba(255, 255, 255, 0.7)", fontSize: 12 }}>
@@ -218,6 +297,11 @@ export default function HomeScreen({ navigation }: any) {
             </View>
           </View>*/}
         </View>
+<<<<<<< HEAD
+=======
+        ))
+        )}
+>>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
 
         {/* SEÇÃO DE LANÇAMENTOS */}
         <View style={styles.sectionHeader}>

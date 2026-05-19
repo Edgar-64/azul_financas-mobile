@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { use, useEffect, useState } from "react";
+=======
+import React, { useState, useEffect } from "react";
+>>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
 import {
   View,
   Text,
@@ -7,14 +11,17 @@ import {
   StyleSheet,
   SafeAreaView,
   Image,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserLogin } from "../services/Users/post";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+<<<<<<< HEAD
   const [loading, setLoading] = useState(false);
   const [id, setUser] = useState("");
 
@@ -26,10 +33,19 @@ export default function LoginScreen({ navigation }: any) {
 
     // Evita que o usuário clique várias vezes enquanto a requisição viaja
     setLoading(true);
+=======
+>>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
 
+  async function entrar() {
     try {
-      const objetoParaEnvio = { email, password };
+    const dados = await UserLogin({
+      email,
+      password
+    });
+    console.log(dados);
+    const userId = dados.user.id;
 
+<<<<<<< HEAD
       // O await trava a execução aqui. Se o servidor responder 401,
       // ele pula direto para o catch.
       const resposta = await UserLogin(objetoParaEnvio);
@@ -57,8 +73,36 @@ export default function LoginScreen({ navigation }: any) {
       alert("E-mail ou senha incorretos. Tente novamente.");
     } finally {
       setLoading(false); // Libera o botão novamente
+=======
+    await AsyncStorage.setItem('@user_id', String(userId));
+    console.log("Usuário salvo com sucesso!");
+
+    navigation.navigate("Home");
+    console.log(userId);
+    } catch(error){
+      Alert.alert("Erro", "E-mail ou senha inválidos");
+    }
+  }
+
+
+  useEffect(() => {
+  const verificarLogin = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('@user_id');
+      
+      // Se o ID existir, o usuário já logou antes
+      if (userId !== null) {
+        // Vai direto para a Home sem o usuário precisar digitar nada
+        navigation.replace("Home"); 
+      }
+    } catch (error) {
+      console.log("Erro ao ler o AsyncStorage", error);
+>>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
     }
   };
+
+  verificarLogin();
+}, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -106,7 +150,7 @@ export default function LoginScreen({ navigation }: any) {
         {/* Botão Entrar - Nome da rota: Home */}
         <TouchableOpacity
           style={styles.btnPrimary}
-          onPress={handleLogin}
+          onPress={entrar}
           activeOpacity={0.8}
         >
           <Text style={styles.btnText}>Entrar</Text>
