@@ -93,7 +93,7 @@ export default function EditarPerfilScreen({ navigation }: any) {
           />
         </View>
 
-        <TouchableOpacity style={styles.saveBtn} onPress={handleUpdate}>
+        <TouchableOpacity style={styles.saveBtn} onPress={(handleUpdate) => navigation.replace("Perfil")}>
           <Text style={styles.saveBtnText}>Salvar</Text>
         </TouchableOpacity>
       </View>

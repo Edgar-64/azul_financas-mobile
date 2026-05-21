@@ -80,6 +80,8 @@ export const UserPut = (dados: any, userId: string | number) =>
   apiRequest("PUT", `/users/${userId}`, dados);
 export const CaixaGet = (userId: string | number) =>
   apiRequest("GET", `/caixa/${userId}`);
+export const CaixaPost = (dados: any) =>
+  apiRequest("POST", `/caixa/registrar`, dados);
 export const CaixaPostGuardar = (dados: any) =>
   apiRequest("POST", `/caixa/guardar`, dados);
 export const CaixaPostRecuperar = (dados: any) =>

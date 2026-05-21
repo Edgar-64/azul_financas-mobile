@@ -18,6 +18,7 @@ import { DrawerActions } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   CaixaGet,
+  CaixaPost,
   CaixaPostGuardar,
   CaixaPostRecuperar,
 } from "../services/Users/post";
@@ -66,11 +67,12 @@ export default function CaixinhasScreen({ navigation }: any) {
     }
   };
 
+  const { refreshing, onRefresh } = useAutoReload(carregarCaixinhas);
+
   useEffect(() => {
     carregarCaixinhas();
   }, []);
 
-  const { refreshing, onRefresh } = useAutoReload(carregarCaixinhas);
 
   const limparFormatacaoMoeda = (valor: string) => {
     return valor.replace(/\s/g, "").replace(",", ".");
@@ -97,7 +99,7 @@ export default function CaixinhasScreen({ navigation }: any) {
         userId: Number(idSalvo),
       };
 
-      await CaixaPostGuardar(objetoParaEnvio);
+      await CaixaPost(objetoParaEnvio);
 
       const sucessoMsg = "Caixinha criada com sucesso!";
       Platform.OS === "web"
@@ -162,7 +164,7 @@ export default function CaixinhasScreen({ navigation }: any) {
       };
 
       if (tipoOperacao === "guardar") {
-        await CaixaPostGuardar(payload);
+        await CaixaPost(payload);
       } else {
         await CaixaPostRecuperar(payload);
       }

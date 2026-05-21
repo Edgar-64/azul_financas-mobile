@@ -121,11 +121,9 @@ export default function PerfilScreen() {
             color="#1D355E"
             style={{ marginTop: 10, marginBottom: 25 }}
           />
-        ) : ( 
+        ) : (
           <View style={styles.userInfoContainer}>
-            <Text style={styles.userName}>
-              {user?.nome || "Usuário AZUL"}
-            </Text>
+            <Text style={styles.userName}>{user?.name || "Usuário AZUL"}</Text>
             <Text style={styles.userEmail}>
               {user?.email || "azul@email.com"}
             </Text>
@@ -159,28 +157,30 @@ export default function PerfilScreen() {
             </View>
           </View>
 
-          {loading && caixa.length === 0 ? (
+          {loading && caixa.length == 0 ? (
             <ActivityIndicator
               size="small"
               color="#1D355E"
               style={{ marginVertical: 20 }}
             />
-          ) : caixa.length === 0 ? (
+          ) : caixa.length == 0 ? (
             <Text style={styles.emptyText}>Nenhuma caixinha encontrada.</Text>
           ) : (
             caixa.map((item, index) => {
+              // Cálculos matemáticos de progresso baseados nos dados reais do seu banco
               const valorGuardado = Number(item.valor || 0);
-              const valorMeta = Number(item.meta || 1);
+              const valorMeta = Number(item.alvo || 1); // alvo = Float limite no banco
               const progresso = (valorGuardado / valorMeta) * 100;
 
               return (
                 <View
-                  key={item.id || item.idCaixa || index}
+                  key={item.idCaixa || item.id || index}
                   style={styles.itemCaixinha}
                 >
+                  {/* Informações de Texto do Card */}
                   <View style={styles.infoCaixinha}>
                     <Text style={styles.nomeCaixinha}>
-                      {item.alvo || "Meta"}
+                      {item.meta || "Meta sem nome"}
                     </Text>
                     <Text style={styles.valorCaixinha}>
                       {new Intl.NumberFormat("pt-BR", {
@@ -190,6 +190,7 @@ export default function PerfilScreen() {
                     </Text>
                   </View>
 
+                  {/* Barra de Progresso Dinâmica */}
                   <View style={styles.barBack}>
                     <View
                       style={[
