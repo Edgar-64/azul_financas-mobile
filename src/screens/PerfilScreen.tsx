@@ -27,6 +27,12 @@ export default function PerfilScreen() {
     navigation.navigate("Caixinhas");
   };
 
+  // 🚀 Redirecionando para a rota EditarPerfilScreen
+  const handleEditarPerfil = () => {
+    console.log("Navegando para Editar Perfil...");
+    navigation.navigate("EditarPerfilScreen");
+  };
+
   useEffect(() => {
     const buscarIdSalvo = async () => {
       try {
@@ -47,7 +53,7 @@ export default function PerfilScreen() {
             setUser(dadosUsuario);
             setCaixa(Array.isArray(resCaixa) ? resCaixa : resCaixa?.data || []);
           } catch (error) {
-            console.error("Erro ao carregar dados da Home:", error);
+            console.error("Erro ao carregar dados do Perfil:", error);
           } finally {
             setLoading(false);
           }
@@ -67,28 +73,42 @@ export default function PerfilScreen() {
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
           <Ionicons name="menu" size={28} color="#333" />
         </TouchableOpacity>
+        
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>MEU PERFIL</Text>
           <Text style={styles.headerSubtitle}>Gestão de Metas</Text>
         </View>
+
+        {/* Ícone de engrenagem que vai para a edição */}
+        <TouchableOpacity onPress={handleEditarPerfil} style={{ marginRight: 15 }}>
+          <Ionicons name="settings-outline" size={24} color="#333" />
+        </TouchableOpacity>
+
         <TouchableOpacity onPress={() => navigation.replace("Login")}>
           <Ionicons name="log-out-outline" size={24} color="#333" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <Image
-          source={{
-            uri: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-          }}
-          style={styles.avatar}
-        />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* AVATAR COM ÍCONE DE LÁPIS */}
+        <View style={styles.avatarContainer}>
+          <Image
+            source={{
+              uri: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+            }}
+            style={styles.avatar}
+          />
+          <TouchableOpacity style={styles.btnEditAvatar} onPress={handleEditarPerfil}>
+            <Ionicons name="pencil" size={14} color="#FFF" />
+          </TouchableOpacity>
+        </View>
 
+        {/* EXIBIÇÃO DE INFORMAÇÕES DO USUÁRIO DINÂMICO */}
         {loading ? (
           <ActivityIndicator
             size="small"
             color="#1D355E"
-            style={{ marginTop: 20, marginBottom: 20 }}
+            style={{ marginTop: 10, marginBottom: 25 }}
           />
         ) : (
           <View style={styles.userInfoContainer}>
@@ -101,12 +121,21 @@ export default function PerfilScreen() {
           </View>
         )}
 
+        {/* 🔘 BOTÃO PRINCIPAL DE EDITAR PERFIL */}
+        <TouchableOpacity
+          style={[styles.btnEditarPerfil, Platform.OS === "web" && { cursor: "pointer" }]}
+          onPress={handleEditarPerfil}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="create-outline" size={18} color="#FFF" style={{ marginRight: 8 }} />
+          <Text style={styles.txtEditarPerfil}>Editar Dados do Perfil</Text>
+        </TouchableOpacity>
+
         {/* CARD DE CAIXINHAS NO PERFIL */}
         <View style={styles.caixinhasCard}>
           <View style={styles.caixinhasHeader}>
             <Text style={styles.caixinhasTitle}>RESUMO DAS CAIXINHAS</Text>
             <View style={styles.badge}>
-              {/* Ajustado para mostrar o total real do banco */}
               <Text style={styles.badgeText}>{caixa.length}</Text>
             </View>
           </View>
@@ -117,13 +146,12 @@ export default function PerfilScreen() {
               color="#1D355E"
               style={{ marginVertical: 20 }}
             />
-          ) : caixa.length === 0 ? (
+          ) : caixa.length == 0 ? (
             <Text style={styles.emptyText}>Nenhuma caixinha encontrada.</Text>
           ) : (
-            // O loop mapeia cada caixinha criando uma estrutura vertical isolada
             caixa.map((item, index) => {
               const valorGuardado = Number(item.valor || 0);
-              const valorMeta = Number(item.meta || 1); // Evita divisão por zero
+              const valorMeta = Number(item.meta || 1);
               const progresso = (valorGuardado / valorMeta) * 100;
 
               return (
@@ -138,7 +166,6 @@ export default function PerfilScreen() {
                     </Text>
                   </View>
                   
-                  {/* Reintrodução da barra de progresso visual */}
                   <View style={styles.barBack}>
                     <View
                       style={[
@@ -185,11 +212,39 @@ const styles = StyleSheet.create({
   headerTitle: { fontWeight: "bold", fontSize: 14 },
   headerSubtitle: { fontSize: 11, color: "#777" },
   content: { alignItems: "center", paddingVertical: 20 },
+  avatarContainer: { position: "relative", marginBottom: 10 },
   avatar: { width: 90, height: 90, borderRadius: 45, backgroundColor: "#DDD" },
-  userInfoContainer: { alignItems: "center", marginVertical: 10 },
-  userName: { fontSize: 18, fontWeight: "bold", marginTop: 5 },
-  userEmail: { color: "#777", marginBottom: 15 },
-
+  btnEditAvatar: {
+    position: "absolute",
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#1D355E",
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#F5F6F8",
+  },
+  userInfoContainer: { alignItems: "center", marginTop: 5, marginBottom: 15 },
+  userName: { fontSize: 18, fontWeight: "bold" },
+  userEmail: { color: "#777" },
+  btnEditarPerfil: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1D355E",
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+    borderRadius: 25,
+    marginBottom: 25,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  txtEditarPerfil: { color: "#FFF", fontWeight: "bold", fontSize: 14 },
   caixinhasCard: {
     backgroundColor: "#FFF",
     width: "90%",
@@ -199,7 +254,6 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 10,
-    marginTop: 10,
   },
   caixinhasHeader: {
     flexDirection: "row",
@@ -214,7 +268,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   badgeText: { fontSize: 12, color: "#64748B", fontWeight: "bold" },
-
   itemCaixinha: { marginBottom: 15, width: "100%" },
   infoCaixinha: {
     flexDirection: "row",
@@ -232,7 +285,6 @@ const styles = StyleSheet.create({
   },
   barFront: { height: "100%" },
   emptyText: { textAlign: "center", color: "#999", marginVertical: 15, fontSize: 13 },
-
   btnVerMais: {
     marginTop: 10,
     paddingTop: 15,

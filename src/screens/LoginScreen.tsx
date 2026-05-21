@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import React, { use, useEffect, useState } from "react";
-=======
-import React, { useState, useEffect } from "react";
->>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,97 +8,65 @@ import {
   SafeAreaView,
   Image,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { UserLogin } from "../services/Users/post";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { UserLogin } from "../services/Users/post";
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-<<<<<<< HEAD
   const [loading, setLoading] = useState(false);
-  const [id, setUser] = useState("");
 
+  // Função unificada para tratar o login
   const handleLogin = async () => {
     if (!email || !password) {
-      alert("Preencha todos os campos!");
+      Alert.alert("Aviso", "Preencha todos os campos!");
       return;
     }
 
-    // Evita que o usuário clique várias vezes enquanto a requisição viaja
     setLoading(true);
-=======
->>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
 
-  async function entrar() {
     try {
-    const dados = await UserLogin({
-      email,
-      password
-    });
-    console.log(dados);
-    const userId = dados.user.id;
-
-<<<<<<< HEAD
-      // O await trava a execução aqui. Se o servidor responder 401,
-      // ele pula direto para o catch.
-      const resposta = await UserLogin(objetoParaEnvio);
+      const resposta = await UserLogin({ email, password });
 
       if (resposta && resposta.user && resposta.user.id) {
         const userId = resposta.user.id;
 
-        // 2. Salva o ID no AsyncStorage (precisa ser em formato String)
-        await AsyncStorage.setItem("@user_id", userId);
+        // Salva o ID no AsyncStorage convertido para String
+        await AsyncStorage.setItem("@user_id", String(userId));
 
-        // Se sua API mandar token, é bom salvar também:
-        // await AsyncStorage.setItem("@user_token", resposta.token);
+        Alert.alert("Sucesso", "Login realizado com sucesso!");
 
-        alert("Login realizado com sucesso!");
-
-        // 3. Navega para a tela principal
+        // Vai para a Home limpando o histórico de navegação
         navigation.replace("Home");
       } else {
-        alert("Erro ao processar dados de login do servidor.");
+        Alert.alert("Erro", "Erro ao processar dados de login do servidor.");
       }
-      
     } catch (error: any) {
-      // Aqui tratamos o erro 401 (Unauthorized)
       console.error("Erro detectado:", error.message);
-      alert("E-mail ou senha incorretos. Tente novamente.");
+      Alert.alert("Erro", "E-mail ou senha incorretos. Tente novamente.");
     } finally {
-      setLoading(false); // Libera o botão novamente
-=======
-    await AsyncStorage.setItem('@user_id', String(userId));
-    console.log("Usuário salvo com sucesso!");
-
-    navigation.navigate("Home");
-    console.log(userId);
-    } catch(error){
-      Alert.alert("Erro", "E-mail ou senha inválidos");
-    }
-  }
-
-
-  useEffect(() => {
-  const verificarLogin = async () => {
-    try {
-      const userId = await AsyncStorage.getItem('@user_id');
-      
-      // Se o ID existir, o usuário já logou antes
-      if (userId !== null) {
-        // Vai direto para a Home sem o usuário precisar digitar nada
-        navigation.replace("Home"); 
-      }
-    } catch (error) {
-      console.log("Erro ao ler o AsyncStorage", error);
->>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
+      setLoading(false);
     }
   };
 
-  verificarLogin();
-}, []);
+  // Verifica se o usuário já está logado ao abrir o app
+  useEffect(() => {
+    const verificarLogin = async () => {
+      try {
+        const userId = await AsyncStorage.getItem("@user_id");
+        if (userId !== null) {
+          navigation.replace("Home");
+        }
+      } catch (error) {
+        console.log("Erro ao ler o AsyncStorage", error);
+      }
+    };
+
+    verificarLogin();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -132,7 +96,7 @@ export default function LoginScreen({ navigation }: any) {
 
         <View style={styles.inputContainer}>
           <TextInput
-            style={{ flex: 1, color: "#333" }} // Adicionado cor para visibilidade
+            style={{ flex: 1, color: "#333" }}
             placeholder="Senha"
             secureTextEntry
             placeholderTextColor="#999"
@@ -142,24 +106,30 @@ export default function LoginScreen({ navigation }: any) {
           <Ionicons name="eye-off-outline" size={20} color="#666" />
         </View>
 
-        {/* Link para Recuperar Senha - Nome da rota: RecSenha */}
-        <TouchableOpacity onPress={() => navigation.navigate("RecSenha")}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("RecSenha")}
+          disabled={loading}
+        >
           <Text style={styles.linkRight}>Esqueceu sua senha?</Text>
         </TouchableOpacity>
 
-        {/* Botão Entrar - Nome da rota: Home */}
         <TouchableOpacity
           style={styles.btnPrimary}
-          onPress={entrar}
+          onPress={handleLogin}
           activeOpacity={0.8}
+          disabled={loading}
         >
-          <Text style={styles.btnText}>Entrar</Text>
+          {loading ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.btnText}>Entrar</Text>
+          )}
         </TouchableOpacity>
 
-        {/* Link para Cadastro - Nome da rota: Cadastro */}
         <TouchableOpacity
           onPress={() => navigation.navigate("Cadastro")}
           style={styles.footer}
+          disabled={loading}
         >
           <Text style={styles.linkCenter}>
             Ainda não tem conta?{" "}
@@ -206,6 +176,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     elevation: 2,
+    height: 58,
+    justifyContent: "center",
   },
   btnText: { color: "#FFF", fontWeight: "bold", fontSize: 16 },
   footer: { marginTop: 30, paddingVertical: 10 },

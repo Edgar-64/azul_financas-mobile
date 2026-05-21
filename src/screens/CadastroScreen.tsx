@@ -8,41 +8,49 @@ import {
   SafeAreaView,
   ScrollView,
   Image,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { UserCadastro } from "../services/Users/post";
 
 export default function CadastroScreen({ navigation }: any) {
   const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [senha, setSenha] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [senha, setSenha] = useState(""); // Campo de confirmação
+  const [loading, setLoading] = useState(false);
 
   async function cadastrar() {
-    try {
-<<<<<<< HEAD
-      // Montamos o objeto e enviamos para a função do outro arquivo
-      const objetoParaEnvio = { name, email, password };
-      const resultado = await UserCadastro(objetoParaEnvio);
+    // 1. Validação de campos vazios
+    if (!name || !email || !password || !senha) {
+      Alert.alert("Aviso", "Por favor, preencha todos os campos!");
+      return;
+    }
 
-      alert("Cadastro realizado com sucesso");
-      navigation.navigate("Login");
-    } catch (error) {
-      alert("Falha no login. Verifique seus dados ou o servidor.");
-      console.error(error);
-=======
-      const dados = await UserCadastro({
-        name,
-        email,
-        password
-      });
-      console.log(dados);
-      
-    navigation.navigate("Login");
-    console.log(userId);
-    } catch(error){
-      Alert.alert("Erro", "E-mail ou senha inválidos");
->>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
+    // 2. Validação se as senhas são iguais
+    if (password !== senha) {
+      Alert.alert("Erro", "As senhas não coincidem. Tente novamente.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const objetoParaEnvio = { name, email, password };
+      await UserCadastro(objetoParaEnvio);
+
+      Alert.alert("Sucesso", "Cadastro realizado com sucesso!", [
+        { text: "OK", onPress: () => navigation.navigate("Login") }
+      ]);
+    } catch (error: any) {
+      console.error("Erro no cadastro:", error);
+      Alert.alert(
+        "Erro", 
+        "Falha no cadastro. Verifique seus dados ou a conexão com o servidor."
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -72,53 +80,62 @@ export default function CadastroScreen({ navigation }: any) {
             placeholderTextColor="#999"
             value={name}
             onChangeText={setName}
+            editable={!loading}
           />
           <TextInput
             style={styles.input}
             placeholder="E-mail"
             placeholderTextColor="#999"
             keyboardType="email-address"
+            autoCapitalize="none"
             value={email}
             onChangeText={setEmail}
+            editable={!loading}
           />
 
           <View style={styles.inputContainer}>
             <TextInput
-              style={{ flex: 1 }}
+              style={{ flex: 1, color: "#333" }}
               placeholder="Senha"
               secureTextEntry
               placeholderTextColor="#999"
               value={password}
               onChangeText={setPassword}
+              editable={!loading}
             />
             <Ionicons name="eye-off-outline" size={20} color="#666" />
           </View>
 
           <View style={styles.inputContainer}>
             <TextInput
-              style={{ flex: 1 }}
+              style={{ flex: 1, color: "#333" }}
               placeholder="Confirme sua Senha"
               secureTextEntry
               placeholderTextColor="#999"
               value={senha}
               onChangeText={setSenha}
+              editable={!loading}
             />
             <Ionicons name="eye-off-outline" size={20} color="#666" />
           </View>
 
-          {/* Botão Cadastrar - Nome da rota: Home */}
           <TouchableOpacity
             style={styles.btnPrimary}
-            onPress={(cadastrar)}
+            onPress={cadastrar}
             activeOpacity={0.8}
+            disabled={loading}
           >
-            <Text style={styles.btnText}>Cadastre-se</Text>
+            {loading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.btnText}>Cadastre-se</Text>
+            )}
           </TouchableOpacity>
 
-          {/* Botão Voltar - Nome da rota: Login */}
           <TouchableOpacity
             onPress={() => navigation.navigate("Login")}
             style={styles.footer}
+            disabled={loading}
           >
             <Text style={styles.linkCenter}>
               Já tem conta? <Text style={styles.boldText}>Faça Login</Text>
@@ -159,6 +176,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     marginTop: 10,
+    height: 58,
+    justifyContent: "center",
   },
   btnText: { color: "#FFF", fontWeight: "bold", fontSize: 16 },
   footer: { marginTop: 25, paddingVertical: 10 },

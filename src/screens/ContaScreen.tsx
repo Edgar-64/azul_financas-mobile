@@ -91,7 +91,7 @@ export default function ContaScreen({ navigation }: any) {
           style={styles.input}
           value={saldoInicial}
           keyboardType="numeric"
-          onChangeText={saldoInicial}
+          onChangeText={setSaldoInicial}
           editable={!loading}
         />
 

@@ -8,146 +8,113 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
-  Alert,
 } from "react-native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ionicons } from "@expo/vector-icons";
-import { PayGet, UserLogin } from "../services/Users/post";
-import { ContaGet } from "../services/Users/post";
-import { UserGet } from "../services/Users/post";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ContaPost } from "../services/Users/post";
+import { Ionicons } from "@expo/vector-icons";
+import { PayGet, ContaGet, UserGet, ContaPost } from "../services/Users/post";
 
 export default function HomeScreen({ navigation }: any) {
-<<<<<<< HEAD
-  // 1. Inicialize como array vazio para evitar erro de .map is not a function
   const [pay, setPay] = useState<any[]>([]);
   const [conta, setConta] = useState<any[]>([]);
   const [user, setUser] = useState<any[]>([]);
-  const [userId, setuserId] = useState<string | null>(null);
+  const [id, setId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const handleLogin = async () => {
+  // Função para criar conta quando o usuário não tiver uma
+  const handleCreateAccount = async () => {
+    if (!id) return;
     const saldo = Number(0.01);
-    const userId = Number(await AsyncStorage.getItem("@user_id"));
+    const userId = Number(id);
 
-    // Evita que o usuário clique várias vezes enquanto a requisição viaja
     setLoading(true);
-
     try {
       const objetoParaEnvio = { saldo, userId };
-
-      // O await trava a execução aqui. Se o servidor responder 401,
-      // ele pula direto para o catch.
-      const resposta = await ContaPost(objetoParaEnvio);
-      alert("Conta criada, Porfavor reinicie o App");
-      
+      await ContaPost(objetoParaEnvio);
+      alert("Conta criada com sucesso! Por favor, reinicie o aplicativo.");
     } catch (error: any) {
-      // Aqui tratamos o erro 401 (Unauthorized)
-      console.error("Erro detectado:", error.message);
-      alert("Tente novamente.");
-    } finally {
-      setLoading(false); // Libera o botão novamente
-    }
-  };
-
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem("@user_id");
-    navigation.replace("Login"); // Manda de volta para o Login
-  };
-
-  useEffect(() => {
-    const buscarIdSalvo = async () => {
-      try {
-        const userId = await AsyncStorage.getItem("@user_id");
-        const query = "";
-        if (userId !== null) {
-          setuserId(userId);
-          const carregarDadosIniciais = async () => {
-            setLoading(true);
-            try {
-              // Dispara as 3 chamadas ao mesmo tempo (mais rápido)
-              const [resPay, resConta, resUser] = await Promise.all([
-                PayGet(userId, query || ""),
-                ContaGet(userId || ""),
-                UserGet(userId || ""),
-              ]);
-
-              console.log("RESCONTA ORIGINAL:", resConta);
-
-              setPay(Array.isArray(resPay) ? resPay : resPay.data || []);
-              setUser(Array.isArray(resUser) ? resUser : resUser.data || []);
-              if (Array.isArray(resConta)) {
-                setConta(resConta);
-              } else if (resConta && resConta.data) {
-                // Se vier dentro de .data e for array, ou se for objeto envelopa num array
-                setConta(
-                  Array.isArray(resConta.data)
-                    ? resConta.data
-                    : [resConta.data],
-                );
-              } else if (resConta) {
-                // Se o 'resConta' for o objeto direto da conta, envelopa ele em um array
-                setConta([resConta]);
-              } else {
-                setConta([]);
-              }
-            } catch (error) {
-              console.error("Erro ao carregar dados da Home:", error);
-            } finally {
-              setLoading(false);
-            }
-          };
-
-          carregarDadosIniciais();
-        }
-      } catch (error) {
-        console.error("Erro ao buscar o ID local", error);
-=======
-  const handleLogout = async () => {
-  await AsyncStorage.removeItem('@user_id');
-  navigation.replace("Login");
-  };
-  
-  const [pay, setPay] = useState([]);
-  const [conta, setConta] = useState([]);
-  const [user, setUser] = useState([]);
-  const [id, setId] = useState();
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-  const carregarTudo = async () => {
-    setLoading(true);
-    try {
-      const Uid = await AsyncStorage.getItem('@user_id');
-      
-      if (Uid) {
-        setId(Uid);
-
-        const [resPay, resConta, resUser] = await Promise.all([
-          PayGet(Uid),
-          ContaGet(Uid),
-          UserGet(Uid),
-        ]);
-        setPay(Array.isArray(resPay) ? resPay : resPay.data || []);
-        setConta(Array.isArray(resConta) ? resConta : resConta.data || []);
-        setUser(Array.isArray(resUser) ? resUser : resUser.data || []);
->>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
-      }
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error);
+      console.error("Erro ao criar conta:", error.message);
+      alert("Não foi possível criar a conta. Tente novamente.");
     } finally {
       setLoading(false);
     }
   };
 
-<<<<<<< HEAD
-    buscarIdSalvo();
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem("@user_id");
+    navigation.replace("Login");
+  };
+
+  useEffect(() => {
+    const carregarTudo = async () => {
+      setLoading(true);
+      try {
+        const Uid = await AsyncStorage.getItem("@user_id");
+        const query = "";
+
+        if (Uid) {
+          setId(Uid);
+
+          // O catch individual impede que um erro 404/500 na rota de conta quebre o app inteiro
+          const [resPay, resConta, resUser] = await Promise.all([
+            PayGet(Uid, query).catch(() => []),
+            ContaGet(Uid).catch(() => []),
+            UserGet(Uid).catch(() => []),
+          ]);
+
+          setPay(Array.isArray(resPay) ? resPay : resPay?.data || []);
+          setUser(Array.isArray(resUser) ? resUser : resUser?.data || []);
+
+          // Garante a conversão correta da conta em estrutura de Array legível
+          if (resConta && Array.isArray(resConta)) {
+            setConta(resConta);
+          } else if (resConta && resConta.data) {
+            setConta(
+              Array.isArray(resConta.data) ? resConta.data : [resConta.data],
+            );
+          } else if (resConta) {
+            setConta([resConta]);
+          } else {
+            setConta([]);
+          }
+        }
+      } catch (error) {
+        console.error("Erro geral ao carregar dados:", error);
+        setConta([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarTudo();
   }, []);
-=======
-  carregarTudo();
-}, []);
->>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
+
+  const obterDataAtual = () => {
+    const hoje = new Date();
+
+    // Opção 1: Formato padrão brasileiro (DD/MM/AAAA) -> "21/05/2026"
+    // return hoje.toLocaleDateString("pt-BR");
+
+    // Opção 2: Formato do seu App (MÊS / ANO) -> "MAIO / 2026"
+    const meses = [
+      "JANEIRO",
+      "FEVEREIRO",
+      "MARÇO",
+      "ABRIL",
+      "MAIO",
+      "JUNHO",
+      "JULHO",
+      "AGOSTO",
+      "SETEMBRO",
+      "OUTUBRO",
+      "NOVEMBRO",
+      "DEZEMBRO",
+    ];
+
+    const mesAtual = meses[hoje.getMonth()];
+    const anoAtual = hoje.getFullYear();
+
+    return `${mesAtual} / ${anoAtual}`;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -175,133 +142,81 @@ export default function HomeScreen({ navigation }: any) {
 
         <Text style={styles.subtitle}>Vamos organizar suas finanças?</Text>
 
-<<<<<<< HEAD
+        {/* CARD PRINCIPAL (CORRIGIDO) */}
         <View style={styles.card}>
-=======
-        {/* SELETOR DE MESES */}
-        <View style={styles.months}>
-          {["MAR", "ABR", "MAI", "JUN", "JUL"].map((m, i) => (
-            <TouchableOpacity key={i} style={styles.monthButton}>
-              <Text style={[styles.month, m === "MAI" && styles.activeMonth]}>
-                {m}
-              </Text>
-              {m === "MAI" && <View style={styles.activeIndicator} />}
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* CARD PRINCIPAL */}
-        loading ? (
-          <ActivityIndicator
-            size="small"
-            color="#1D355E"
-            style={{ marginTop: 20 }}
-          />
-        ) : (
-        conta
-        .filter(c => String(c.userId) === String(id))
-        .map((c, index) => (
-        <View style={styles.card} key={c.contaId  || index}>
->>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
           <View style={styles.cardHeader}>
-            <Text style={styles.cardMonth}>MAIO / 2026</Text>
+            <Text style={styles.cardMonth}>{obterDataAtual()}</Text>
             <TouchableOpacity onPress={() => navigation.navigate("Conta")}>
               <Ionicons name="settings-outline" size={20} color="#FFF" />
             </TouchableOpacity>
           </View>
-<<<<<<< HEAD
-
-          <Text style={styles.cardLabel}>Saldo disponível</Text>
 
           {loading ? (
             <ActivityIndicator
               size="small"
-              color="#1D355E"
+              color="#FFF"
               style={{ marginTop: 20 }}
             />
           ) : conta && conta.length > 0 ? (
+            // Se o usuário tem conta cadastrada, mapeia os dados dela aqui
             conta.map((item, index) => (
-              <View key={item.userId || item.idConta || index}>
-                {/* Exibe o Saldo formatado */}
-                <Text style={styles.cardValue}>
-                  {typeof item.saldo === "number"
-                    ? `R$ ${item.saldo.toFixed(2)}`
-                    : item.saldo || "R$ 0,00"}
-                </Text>
+              <View key={item.idConta || index}>
+                <Text style={styles.cardLabel}>Saldo disponível</Text>
+                {item.saldo >= 0 ? (
+                  <Text style={styles.cardValue}>
+                    {typeof item.saldo === "number"
+                      ? `R$ ${item.saldo.toFixed(2)}`
+                      : item.saldo || "R$ 0,00"}
+                  </Text>
+                ) : (
+                  <Text style={styles.cardValueNegative}>
+                    {typeof item.saldo === "number"
+                      ? `R$ ${item.saldo.toFixed(2)}`
+                      : item.saldo || "R$ 0,00"}
+                  </Text>
+                )}
                 <TouchableOpacity
-                  style={styles.monthButton}
+                  style={[styles.actionButton, { marginTop: 10 }]}
                   onPress={() =>
                     navigation.navigate("NovoLancamento", {
                       idConta: item.idConta,
                     })
                   }
                 >
-                  <Text style={{ color: "#FFF", fontWeight: "bold" }}>
+                  <Text style={{ color: "#1D355E", fontWeight: "bold" }}>
                     Novo Pagamento
                   </Text>
                 </TouchableOpacity>
               </View>
             ))
           ) : (
-            /* Caso a API retorne um array vazio [] */
-=======
-          <Text style={styles.cardLabel}>Orçamento disponível</Text>
-          <Text style={styles.cardValue}>{c.saldo}</Text>
-          <View style={styles.progressBar}>
-            <View style={styles.progress} />
-          </View>
-          <View style={styles.rowInfo}>
->>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
-            <View>
+            // SE O ARRAY DE CONTA ESTIVER VAZIO, EXIBE O BOTÃO DE CRIAR AQUI
+            <View style={{ alignItems: "center", marginTop: 15 }}>
+              <Text style={styles.cardLabel}>Saldo disponível</Text>
               <Text style={styles.cardValue}>R$ 0,00</Text>
-              <Text style={{ color: "rgba(255, 255, 255, 0.7)", fontSize: 12 }}>
-                Nenhuma conta vinculada. 
-                <TouchableOpacity onPress={handleLogin}>
-                  <Text> Faça já a sua!</Text>
-                </TouchableOpacity>
+              <Text
+                style={{
+                  color: "rgba(255, 255, 255, 0.7)",
+                  fontSize: 13,
+                  marginBottom: 15,
+                  textAlign: "center",
+                }}
+              >
+                Você ainda não possui uma conta vinculada a este perfil.
               </Text>
+              <TouchableOpacity
+                onPress={handleCreateAccount}
+                style={styles.actionButton}
+              >
+                <Text
+                  style={{ color: "#1D355E", fontWeight: "bold", fontSize: 14 }}
+                >
+                  Criar minha conta agora
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
-
-          {/*<View style={styles.rowInfo}>
-            <View style={{ alignItems: "flex-end" }}>
-              <Text style={styles.infoLabel}>Limite</Text>
-              {loading ? (
-                <ActivityIndicator
-                  size="small"
-                  color="#1D355E"
-                  style={{ marginTop: 20 }}
-                />
-              ) : caixa && caixa.length > 0 ? (
-                caixa.map((caixa, index) => (
-                  <View key={caixa.userId || caixa.idCaixa || index}>
-                    {/* Exibe o Saldo formatado 
-                    <Text style={styles.infoValue}>
-                      {typeof caixa.valorMove === "number"
-                        ? `R$ ${caixa.valorMove.toFixed(2)}`
-                        : caixa.valorMove || "R$ 0,00"}
-                    </Text>
-                  </View>
-                ))
-              ) : (
-                /* Caso a API retorne um array vazio [] 
-                <View>
-                  <Text style={styles.cardValue}>R$ 0,00</Text>
-                  <Text
-                    style={{ color: "rgba(255, 255, 255, 0.7)", fontSize: 12 }}
-                  >
-                    Nenhuma conta vinculada
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>*/}
         </View>
-<<<<<<< HEAD
-=======
-        ))
-        )}
->>>>>>> a39ec1c5be201af8a2a9b7efebb0c503ab940978
 
         {/* SEÇÃO DE LANÇAMENTOS */}
         <View style={styles.sectionHeader}>
@@ -332,11 +247,19 @@ export default function HomeScreen({ navigation }: any) {
                 <Text style={styles.itemDate}>{p.data}</Text>
               </View>
 
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={[styles.itemValue, { color: "#DC2626" }]}>
-                  R$ {p.valor || "0,00"}
-                </Text>
-              </View>
+              {p.tipoLaunch == "SAIDA" ? (
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text style={[styles.itemValue, { color: "#DC2626" }]}>
+                    R$ {p.valor || "0,00"}
+                  </Text>
+                </View>
+              ) : (
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text style={[styles.itemValue, { color: "#0da519" }]}>
+                    R$ {p.valor || "0,00"}
+                  </Text>
+                </View>
+              )}
             </View>
           ))
         )}
@@ -379,7 +302,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   card: {
-    backgroundColor: "#1D355E", // Alterado para o azul do tema
+    backgroundColor: "#1D355E",
     marginHorizontal: 20,
     borderRadius: 25,
     padding: 25,
@@ -398,25 +321,21 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginVertical: 10,
   },
-  progressBar: {
-    height: 6,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 5,
-    overflow: "hidden",
-    marginTop: 10,
+  cardValueNegative: {
+    color: "#b11b1b",
+    fontSize: 32,
+    fontWeight: "bold",
+    marginVertical: 10,
   },
-  progress: {
-    width: "65%",
-    height: "100%",
+  actionButton: {
     backgroundColor: "#FFF",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
   },
-  rowInfo: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 15,
-  },
-  infoLabel: { color: "#CCC", fontSize: 11, textTransform: "uppercase" },
-  infoValue: { color: "#FFF", fontWeight: "bold", fontSize: 14, marginTop: 2 },
   sectionHeader: {
     flexDirection: "row",
     paddingHorizontal: 20,
