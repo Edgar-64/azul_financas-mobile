@@ -15,139 +15,33 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { DrawerActions } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { CaixaPostGuardar, CaixaPostRecuperar } from "../services/Users/post"; // Certifique-se de que o caminho está correto
+import {
+  CaixaGet,
+  CaixaPostGuardar,
+  CaixaPostRecuperar,
+} from "../services/Users/post";
 
 export default function CaixinhasScreen({ navigation }: any) {
-  // Estado para armazenar os dados reais vindos do banco de dados
   const [caixas, setCaixas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingEnvio, setLoadingEnvio] = useState(false);
 
-  // Estados para os Modais de Ações
+  // Estados para os Modais de Ações (Depositar / Resgatar)
   const [modalAcaoVisible, setModalAcaoVisible] = useState(false);
   const [modalInputVisible, setModalInputVisible] = useState(false);
   const [selectedId, setSelectedId] = useState("");
-  const [tipoOperacao, setTipoOperacao] = useState<"guardar" | "resgatar">(
-    "guardar",
-  );
+  const [tipoOperacao, setTipoOperacao] = useState<"guardar" | "resgatar">("guardar");
   const [valorInput, setValorInput] = useState("");
 
-  // Estados para o Modal de Criar Nova Caixinha (O BOTÃO DO +)
+  // Estados para o Modal de Criar Nova Caixinha
   const [modalCriarVisible, setModalCriarVisible] = useState(false);
   const [novaMeta, setNovaMeta] = useState("");
   const [novaAlvo, setNovaAlvo] = useState("");
-  const [novaCaixa, setNovaCaixa] = useState("");
-  const [novaMove, setNovaMove] = useState("");
-  const [novaValor, setNovaValor] = useState("");
+  const [move, setMove] = useState("ENTRADA");
 
-  // Busca o registro selecionado dentro da lista vinda do banco (usando idCaixa ou id)
   const caixinhaSelecionada = caixas.find(
     (m) => (m.idCaixa?.toString() || m.id?.toString()) === selectedId,
   );
-
-  // FUNÇÃO MÁSCARA: Transforma números digitados em formato "1.234,56"
-  const formatarMoeda = (texto: string) => {
-    const apenasNumeros = texto.replace(/\D/g, "");
-    if (!apenasNumeros) return "";
-    const valorNum = parseFloat(apenasNumeros) / 100;
-    return valorNum.toLocaleString("pt-BR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  };
-
-  const handleGuardar = async () => {
-    // Evita que o usuário clique várias vezes enquanto a requisição viaja
-    setLoading(true);
-
-    try {
-      const idSalvo = await AsyncStorage.getItem("@user_id");
-      const objetoParaEnvio = {
-        alvo: novaAlvo,
-        caixa: novaCaixa,
-        meta: novaMeta,
-        move: novaMove,
-        userId: idSalvo,
-        valormove: novaValor,
-      };
-
-      // O await trava a execução aqui. Se o servidor responder 401,
-      // ele pula direto para o catch.
-      const resposta = await CaixaPostGuardar(objetoParaEnvio);
-
-      if (resposta && resposta.user && resposta.user.id) {
-        const userId = resposta.user.id;
-
-        // 2. Salva o ID no AsyncStorage (precisa ser em formato String)
-        await AsyncStorage.setItem("@user_id", userId);
-
-        // Se sua API mandar token, é bom salvar também:
-        // await AsyncStorage.setItem("@user_token", resposta.token);
-
-        alert("Login realizado com sucesso!");
-
-        // 3. Navega para a tela principal
-        navigation.replace("Home");
-      } else {
-        alert("Erro ao processar dados de login do servidor.");
-      }
-    } catch (error: any) {
-      // Aqui tratamos o erro 401 (Unauthorized)
-      console.error("Erro detectado:", error.message);
-      alert("E-mail ou senha incorretos. Tente novamente.");
-    } finally {
-      setLoading(false); // Libera o botão novamente
-    }
-  };
-  const handleReceber = async () => {
-    // Evita que o usuário clique várias vezes enquanto a requisição viaja
-    setLoading(true);
-
-    try {
-      const idSalvo = await AsyncStorage.getItem("@user_id");
-      const objetoParaEnvio = {
-        alvo: novaAlvo,
-        caixa: novaCaixa,
-        meta: novaMeta,
-        move: novaMove,
-        userId: idSalvo,
-        valormove: novaValor,
-      };
-
-      // O await trava a execução aqui. Se o servidor responder 401,
-      // ele pula direto para o catch.
-      const resposta = await CaixaPostGuardar(objetoParaEnvio);
-
-      if (resposta && resposta.user && resposta.user.id) {
-        const userId = resposta.user.id;
-
-        // 2. Salva o ID no AsyncStorage (precisa ser em formato String)
-        await AsyncStorage.setItem("@user_id", userId);
-
-        // Se sua API mandar token, é bom salvar também:
-        // await AsyncStorage.setItem("@user_token", resposta.token);
-
-        alert("Login realizado com sucesso!");
-
-        // 3. Navega para a tela principal
-        navigation.replace("Home");
-      } else {
-        alert("Erro ao processar dados de login do servidor.");
-      }
-    } catch (error: any) {
-      // Aqui tratamos o erro 401 (Unauthorized)
-      console.error("Erro detectado:", error.message);
-      alert("E-mail ou senha incorretos. Tente novamente.");
-    } finally {
-      setLoading(false); // Libera o botão novamente
-    }
-  };
-
-  // FUNÇÃO AUXILIAR: Converte a string mascarada de volta para número puro (Float)
-  const converterParaNumero = (textoMascarada: string) => {
-    if (!textoMascarada) return 0;
-    const limpo = textoMascarada.replace(/\./g, "").replace(",", ".");
-    return parseFloat(limpo);
-  };
 
   // Função para buscar dados da API
   const carregarCaixinhas = async () => {
@@ -155,24 +49,122 @@ export default function CaixinhasScreen({ navigation }: any) {
     try {
       const idSalvo = await AsyncStorage.getItem("@user_id");
       if (idSalvo !== null) {
-        const resCaixa = await CaixaPostRecuperar(idSalvo);
-        // Garante que o retorno seja tratado como uma lista/array
+        const resCaixa = await CaixaGet(idSalvo);
         setCaixas(Array.isArray(resCaixa) ? resCaixa : resCaixa?.data || []);
       }
     } catch (error) {
-      console.error("Erro ao carregar caixinhas do banco:", error);
-      Platform.OS === "web"
-        ? window.alert("Não foi possível carregar as caixinhas.")
-        : Alert.alert("Erro", "Não foi possível carregar as caixinhas.");
+      console.error("Erro ao carregar caixinhas:", error);
+      const msg = "Não foi possível carregar as caixinhas.";
+      Platform.OS === "web" ? window.alert(msg) : Alert.alert("Erro", msg);
     } finally {
       setLoading(false);
     }
   };
 
-  // Carrega os dados assim que o usuário entra na tela
   useEffect(() => {
     carregarCaixinhas();
   }, []);
+
+  // Formata o valor digitado para o padrão decimal puro antes de converter
+  const limparFormatacaoMoeda = (valor: string) => {
+    return valor.replace(/\s/g, "").replace(",", ".");
+  };
+
+  // AÇÃO: Criar uma Nova Caixinha do Zero
+  const handleCriarCaixinha = async () => {
+    if (!novaAlvo || !novaMeta) {
+      const msg = "Preencha todos os campos para criar uma caixinha!";
+      Platform.OS === "web" ? window.alert(msg) : Alert.alert("Aviso", msg);
+      return;
+    }
+
+    setLoadingEnvio(true);
+    try {
+      const idSalvo = await AsyncStorage.getItem("@user_id");
+      const objetoParaEnvio = {
+        alvo: novaAlvo.toUpperCase(), // Força Letras Maiúsculas
+        meta: parseFloat(limparFormatacaoMoeda(novaMeta)) || 0,
+        move: move,
+        userId: Number(idSalvo),
+        valorMove: 0, // Inicia zerada
+      };
+
+      await CaixaPostGuardar(objetoParaEnvio);
+
+      const sucessoMsg = "Caixinha criada com sucesso!";
+      Platform.OS === "web" ? window.alert(sucessoMsg) : Alert.alert("Sucesso", sucessoMsg);
+      
+      // Limpa os campos e fecha o modal
+      setNovaAlvo("");
+      setNovaMeta("");
+      setModalCriarVisible(false);
+      
+      // Atualiza a listagem da tela com os dados do banco
+      await carregarCaixinhas();
+    } catch (error: any) {
+      console.error("Erro ao criar caixinha:", error.message);
+      Alert.alert("Erro", "Não foi possível criar a caixinha. Tente novamente.");
+    } finally {
+      setLoadingEnvio(false);
+    }
+  };
+
+  // AÇÃO: Confirmar Depósito ou Resgate em uma caixinha existente
+  const confirmarOperacao = async () => {
+    const valorNum = parseFloat(limparFormatacaoMoeda(valorInput));
+
+    if (isNaN(valorNum) || valorNum <= 0) {
+      setModalInputVisible(false);
+      return;
+    }
+
+    const saldoAtual = Number(caixinhaSelecionada?.valor || 0);
+    const metaAtual = Number(caixinhaSelecionada?.meta || 0);
+
+    // Validações locais antes de disparar para a API
+    if (tipoOperacao === "guardar" && (saldoAtual + valorNum) > metaAtual) {
+      const msg = "O valor excedeu a meta estipulada.";
+      Platform.OS === "web" ? window.alert(msg) : Alert.alert("Limite atingido", msg);
+      return;
+    }
+
+    if (tipoOperacao === "resgatar" && valorNum > saldoAtual) {
+      const msg = `Saldo disponível insuficiente: R$ ${saldoAtual.toFixed(2)}`;
+      Platform.OS === "web" ? window.alert(msg) : Alert.alert("Saldo Insuficiente", msg);
+      return;
+    }
+
+    setLoadingEnvio(true);
+    try {
+      const idSalvo = await AsyncStorage.getItem("@user_id");
+      
+      const payload = {
+        idCaixa: caixinhaSelecionada?.idCaixa || caixinhaSelecionada?.id,
+        alvo: caixinhaSelecionada?.alvo,
+        meta: metaAtual,
+        move: tipoOperacao === "guardar" ? "ENTRADA" : "SAIDA",
+        userId: Number(idSalvo),
+        valormove: valorNum,
+      };
+
+      if (tipoOperacao === "guardar") {
+        await CaixaPostGuardar(payload);
+      } else {
+        await CaixaPostRecuperar(payload);
+      }
+
+      setModalInputVisible(false);
+      setValorInput("");
+      
+      // Recarrega a lista atualizada direto do servidor
+      await carregarCaixinhas();
+    } catch (error: any) {
+      console.error("Erro na operação financeira:", error.message);
+      Alert.alert("Erro", "Erro ao processar movimentação. Tente novamente.");
+    } finally {
+      setLoadingEnvio(false);
+    }
+  };
 
   const abrirOpcoes = (id: string) => {
     setSelectedId(id);
@@ -186,81 +178,24 @@ export default function CaixinhasScreen({ navigation }: any) {
     setModalInputVisible(true);
   };
 
-  const confirmarOperacao = () => {
-    const valorNum = parseFloat(valorInput.replace(",", "."));
-
-    if (isNaN(valorNum) || valorNum <= 0) {
-      setModalInputVisible(false);
-      return;
-    }
-
-    setCaixas((prev) =>
-      prev.map((m) => {
-        const currentId = (m.idCaixa || m.id)?.toString();
-        const saldoAtual = Number(m.valor || 0);
-        const metaAtual = Number(m.meta || 0);
-
-        if (currentId === selectedId) {
-          if (tipoOperacao === "guardar") {
-            const novoSaldo = saldoAtual + valorNum;
-            if (novoSaldo > metaAtual) {
-              Platform.OS === "web"
-                ? window.alert("Limite atingido")
-                : Alert.alert("Limite atingido", "O valor excedeu a meta.");
-              return { ...m, valor: metaAtual };
-            }
-            return { ...m, valor: novoSaldo };
-          } else {
-            if (valorNum > saldoAtual) {
-              Platform.OS === "web"
-                ? window.alert("Saldo Insuficiente")
-                : Alert.alert(
-                    "Saldo Insuficiente",
-                    `Disponível: R$ ${saldoAtual.toFixed(2)}`,
-                  );
-              return m;
-            }
-            return { ...m, valor: saldoAtual - valorNum };
-          }
-        }
-        return m;
-      }),
-    );
-
-    setModalInputVisible(false);
-  };
-
-  // Cálculo dinâmico do total acumulado baseado nas caixinhas do banco de dados
-  const totalGeral = caixas.reduce(
-    (acc, curr) => acc + Number(curr.valor || 0),
-    0,
-  );
+  const totalGeral = caixas.reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* HEADER CORRIGIDO COM O BOTÃO "+" */}
+      {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.headerIcon}
-        >
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIcon}>
           <Ionicons name="chevron-back" size={28} color="#333" />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>CAIXINHAS</Text>
-          <TouchableOpacity
-            style={styles.btnAddHeader}
-            onPress={() => setModalCriarVisible(true)}
-          >
+          <TouchableOpacity style={styles.btnAddHeader} onPress={() => setModalCriarVisible(true)}>
             <Ionicons name="add" size={20} color="#1D355E" />
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-          style={styles.headerIcon}
-        >
+        <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.openDrawer())} style={styles.headerIcon}>
           <Ionicons name="menu" size={28} color="#333" />
         </TouchableOpacity>
       </View>
@@ -276,73 +211,40 @@ export default function CaixinhasScreen({ navigation }: any) {
           <View style={styles.totalCard}>
             <Text style={styles.totalLabel}>Total guardado</Text>
             <Text style={styles.totalValue}>
-              {new Intl.NumberFormat("pt-BR", {
-                style: "currency",
-                currency: "BRL",
-              }).format(totalGeral)}
+              {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totalGeral)}
             </Text>
           </View>
 
           {caixas.length === 0 ? (
-            <Text style={styles.emptyText}>
-              Nenhuma caixinha cadastrada no momento.
-            </Text>
+            <Text style={styles.emptyText}>Nenhuma caixinha cadastrada no momento.</Text>
           ) : (
             caixas.map((item, index) => {
               const currentId = (item.idCaixa || item.id || index).toString();
               const guardado = Number(item.valor || 0);
-              const meta = Number(item.meta || 1); // Evita divisão por zero
+              const meta = Number(item.meta || 1);
               const progresso = (guardado / meta) * 100;
               const metaAtingida = guardado >= meta;
 
-              // Fallbacks de ícones baseados em palavras-chave da meta
               let iconeDinamico = "cash-outline";
-              if (item.alvo?.toLowerCase().includes("carro"))
-                iconeDinamico = "car";
-              if (
-                item.alvo?.toLowerCase().includes("viagem") ||
-                item.alvo?.toLowerCase().includes("praia")
-              )
-                iconeDinamico = "airplane";
-              if (
-                item.alvo?.toLowerCase().includes("reserva") ||
-                item.alvo?.toLowerCase().includes("emergência")
-              )
-                iconeDinamico = "shield-checkmark";
+              if (item.alvo?.toLowerCase().includes("carro")) iconeDinamico = "car";
+              if (item.alvo?.toLowerCase().includes("viagem") || item.alvo?.toLowerCase().includes("praia")) iconeDinamico = "airplane";
+              if (item.alvo?.toLowerCase().includes("reserva") || item.alvo?.toLowerCase().includes("emergência")) iconeDinamico = "shield-checkmark";
 
               return (
-                <TouchableOpacity
-                  key={currentId}
-                  style={styles.metaItem}
-                  onPress={() => abrirOpcoes(currentId)}
-                >
+                <TouchableOpacity key={currentId} style={styles.metaItem} onPress={() => abrirOpcoes(currentId)}>
                   <View style={styles.metaTop}>
                     <View style={styles.iconCircle}>
-                      <Ionicons
-                        name={iconeDinamico as any}
-                        size={22}
-                        color="#1D355E"
-                      />
+                      <Ionicons name={iconeDinamico as any} size={22} color="#1D355E" />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.metaNome}>
-                        {item.alvo || "Meta sem nome"}
-                      </Text>
-                      <Text
-                        style={
-                          metaAtingida
-                            ? styles.metaAtingidaText
-                            : styles.metaStatus
-                        }
-                      >
+                      <Text style={styles.metaNome}>{item.alvo || "Meta sem nome"}</Text>
+                      <Text style={metaAtingida ? styles.metaAtingidaText : styles.metaStatus}>
                         {metaAtingida
                           ? "Meta Atingida!"
                           : `${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(guardado)} / ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(meta)}`}
                       </Text>
                     </View>
-                    <Text style={styles.percentText}>
-                      {progresso.toFixed(0)}%
-                    </Text>
+                    <Text style={styles.percentText}>{progresso.toFixed(0)}%</Text>
                   </View>
                   <View style={styles.progressContainer}>
                     <View
@@ -362,59 +264,36 @@ export default function CaixinhasScreen({ navigation }: any) {
         </ScrollView>
       )}
 
-      {/* MENU DE AÇÕES */}
+      {/* MENU DE OPÇÕES (GUARDAR/RESGATAR) */}
       <Modal visible={modalAcaoVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <TouchableOpacity
-            style={{ flex: 1, width: "100%" }}
-            onPress={() => setModalAcaoVisible(false)}
-          />
+          <TouchableOpacity style={{ flex: 1, width: "100%" }} onPress={() => setModalAcaoVisible(false)} />
           <View style={styles.menuContent}>
             <Text style={styles.menuTitle}>
               Saldo atual:{" "}
-              {new Intl.NumberFormat("pt-BR", {
-                style: "currency",
-                currency: "BRL",
-              }).format(Number(caixinhaSelecionada?.valor || 0))}
+              {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(caixinhaSelecionada?.valor || 0))}
             </Text>
-            <TouchableOpacity
-              style={styles.menuBtn}
-              onPress={() => prepararOperacao("guardar")}
-            >
+            <TouchableOpacity style={styles.menuBtn} onPress={() => prepararOperacao("guardar")}>
               <Ionicons name="add-circle-outline" size={22} color="#1D355E" />
               <Text style={styles.menuBtnText}>Guardar Dinheiro</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.menuBtn}
-              onPress={() => prepararOperacao("resgatar")}
-            >
-              <Ionicons
-                name="remove-circle-outline"
-                size={22}
-                color="#E63946"
-              />
-              <Text style={[styles.menuBtnText, { color: "#E63946" }]}>
-                Resgatar Valor
-              </Text>
+            <TouchableOpacity style={styles.menuBtn} onPress={() => prepararOperacao("resgatar")}>
+              <Ionicons name="remove-circle-outline" size={22} color="#E63946" />
+              <Text style={[styles.menuBtnText, { color: "#E63946" }]}>Resgatar Valor</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.btnClose}
-              onPress={() => setModalAcaoVisible(false)}
-            >
+            <TouchableOpacity style={styles.btnClose} onPress={() => setModalAcaoVisible(false)}>
               <Text style={styles.btnCloseText}>Voltar</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* MODAL DE INPUT */}
+      {/* MODAL DE VALOR INPUT (CONFIRMAÇÃO) */}
       <Modal visible={modalInputVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.inputCard}>
             <Text style={styles.modalTitle}>
-              {tipoOperacao === "guardar"
-                ? "Quanto quer guardar?"
-                : "Quanto quer resgatar?"}
+              {tipoOperacao === "guardar" ? "Quanto quer guardar?" : "Quanto quer resgatar?"}
             </Text>
             <Text style={styles.infoSaldo}>
               {tipoOperacao === "resgatar"
@@ -423,100 +302,78 @@ export default function CaixinhasScreen({ navigation }: any) {
             </Text>
             <TextInput
               style={styles.input}
-              placeholder="0,00"
+              placeholder="0.00"
               keyboardType="numeric"
               value={valorInput}
               onChangeText={setValorInput}
               autoFocus
             />
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.btnCancel}
-                onPress={() => setModalInputVisible(false)}
-              >
-                <Text>Cancelar</Text>
+              <TouchableOpacity style={styles.btnCancel} onPress={() => setModalInputVisible(false)}>
+                <Text style={{ color: "#666" }}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.btnSave}
-                onPress={confirmarOperacao}
-              >
-                <Text style={{ color: "#FFF", fontWeight: "bold" }}>
-                  Confirmar
-                </Text>
+              <TouchableOpacity style={styles.btnSave} onPress={confirmarOperacao} disabled={loadingEnvio}>
+                {loadingEnvio ? (
+                  <ActivityIndicator color="#FFF" size="small" />
+                ) : (
+                  <Text style={{ color: "#FFF", fontWeight: "bold" }}>Confirmar</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* MODAL DE POP-UP PARA CRIAR NOVA CAIXINHA */}
-      <Modal
-        visible={modalCriarVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setModalCriarVisible(false)}
-      >
+      {/* MODAL POP-UP: CRIAR NOVA CAIXINHA */}
+      <Modal visible={modalCriarVisible} transparent animationType="fade" onRequestClose={() => setModalCriarVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.inputCard}>
-            <Text
-              style={[styles.modalTitle, { fontSize: 18, marginBottom: 20 }]}
-            >
-              Nova Caixinha
-            </Text>
+            <Text style={[styles.modalTitle, { fontSize: 18, marginBottom: 20 }]}>Nova Caixinha</Text>
 
             <TextInput
               style={styles.formInput}
               placeholder="Nome do seu objetivo (Ex: Carro)"
               placeholderTextColor="#999"
               value={novaAlvo}
-              onChangeText={setNovaAlvo}
+              onChangeText={(text) => setNovaAlvo(text.toUpperCase())} // CAPS LOCK FORÇADO
+              autoCapitalize="characters"
             />
 
             <TextInput
               style={styles.formInput}
-              placeholder="Valor da Meta (R$ 0,00)"
+              placeholder="Valor da Meta (Ex: 1500.00)"
               placeholderTextColor="#999"
               keyboardType="numeric"
               value={novaMeta}
               onChangeText={setNovaMeta}
             />
 
-            <TextInput
-              style={styles.formInput}
-              placeholder="Valor da Meta (R$ 0,00)"
-              placeholderTextColor="#999"
-              keyboardType="numeric"
-              value={novaCaixa}
-              onChangeText={setNovaCaixa}
-            />
-
-            <TextInput
-              style={styles.formInput}
-              placeholder="Valor da Meta (R$ 0,00)"
-              placeholderTextColor="#999"
-              keyboardType="numeric"
-              value={novaMove}
-              onChangeText={(t) => setNovaMove(formatarMoeda(t))}
-            />
-
-            <TextInput
-              style={styles.formInput}
-              placeholder="Valor da Meta (R$ 0,00)"
-              placeholderTextColor="#999"
-              keyboardType="numeric"
-              value={novaValor}
-              onChangeText={setNovaValor}
-            />
-
-            <View style={styles.modalButtons}>
+            <View style={styles.row}>
               <TouchableOpacity
-                style={styles.btnCancel}
-                onPress={() => setModalCriarVisible(false)}
+                style={[styles.entrada, move === "ENTRADA" && styles.entradaAtiva]}
+                onPress={() => setMove("ENTRADA")}
               >
+                <Text style={[styles.txtEntrada, move === "ENTRADA" && styles.txtAtivo]}>Entrada ▲</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.saida, move === "SAIDA" && styles.saidaAtiva]}
+                onPress={() => setMove("SAIDA")}
+              >
+                <Text style={[styles.txtSaida, move === "SAIDA" && styles.txtAtivo]}>Saída ▼</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.modalButtons, { marginTop: 20 }]}>
+              <TouchableOpacity style={styles.btnCancel} onPress={() => setModalCriarVisible(false)}>
                 <Text style={{ color: "#666" }}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.btnSave} onPress={handleGuardar}>
-                <Text style={{ color: "#FFF", fontWeight: "bold" }}>Criar</Text>
+              <TouchableOpacity style={styles.btnSave} onPress={handleCriarCaixinha} disabled={loadingEnvio}>
+                {loadingEnvio ? (
+                  <ActivityIndicator color="#FFF" size="small" />
+                ) : (
+                  <Text style={{ color: "#FFF", fontWeight: "bold" }}>Criar</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -525,6 +382,8 @@ export default function CaixinhasScreen({ navigation }: any) {
     </SafeAreaView>
   );
 }
+
+// ... Mantém seus Estilos (styles) originais intactos lá embaixo
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F6F8" },
@@ -703,5 +562,72 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 12,
     alignItems: "center",
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modal: {
+    backgroundColor: "#FFF",
+    padding: 20,
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+  },
+  title: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  row: {
+    flexDirection: "row",
+    marginTop: 5,
+  },
+  entrada: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: "#16A34A",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    marginRight: 6,
+    backgroundColor: "transparent",
+  },
+  entradaAtiva: {
+    backgroundColor: "#16A34A",
+  },
+  saida: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: "#DC2626",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    marginLeft: 6,
+    backgroundColor: "transparent",
+  },
+  saidaAtiva: {
+    backgroundColor: "#DC2626",
+  },
+  txtEntrada: { color: "#16A34A", fontWeight: "bold" },
+  txtSaida: { color: "#DC2626", fontWeight: "bold" },
+  txtAtivo: { color: "#FFF" },
+  divider: {
+    height: 1,
+    backgroundColor: "#EEE",
+    marginVertical: 20,
+  },
+  btnSalvar: {
+    backgroundColor: "#1D355E",
+    padding: 15,
+    borderRadius: 12,
+    alignItems: "center",
+    height: 52,
+    justifyContent: "center",
+  },
+  textSalvar: {
+    color: "#FFF",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });

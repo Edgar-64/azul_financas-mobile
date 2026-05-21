@@ -78,9 +78,10 @@ export const UserGet = (userId: string | number) =>
   apiRequest("GET", `/users/${userId}`);
 export const UserPut = (dados: any, userId: string | number) =>
   apiRequest("POST", `/users/${userId}`, dados);
+// Substitua no final do seu arquivo de API:
 export const CaixaGet = (userId: string | number) =>
   apiRequest("GET", `/caixa/${userId}`);
 export const CaixaPostGuardar = (dados: any) =>
-  apiRequest("GET", `/caixa/guardar`, dados);
+  apiRequest("POST", `/caixa/guardar`, dados);
 export const CaixaPostRecuperar = (dados: any) =>
-  apiRequest("GET", `/caixa/recuperar`, dados);
+  apiRequest("POST", `/caixa/recuperar`, dados);
