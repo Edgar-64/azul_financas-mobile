@@ -93,14 +93,6 @@ export default function EditarPerfilScreen({ navigation }: any) {
           />
         </View>
 
-        <TouchableOpacity
-          style={styles.mudarSenhaBtn}
-          onPress={() => navigation.navigate("AlterarSenha")}
-        >
-          <Text style={styles.mudarSenhaText}>Mudar senha</Text>
-          <Ionicons name="chevron-forward" size={18} color="#999" />
-        </TouchableOpacity>
-
         <TouchableOpacity style={styles.saveBtn} onPress={handleUpdate}>
           <Text style={styles.saveBtnText}>Salvar</Text>
         </TouchableOpacity>

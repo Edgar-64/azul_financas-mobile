@@ -103,7 +103,6 @@ export default function LoginScreen({ navigation }: any) {
             value={password}
             onChangeText={setPassword}
           />
-          <Ionicons name="eye-off-outline" size={20} color="#666" />
         </View>
 
         <TouchableOpacity

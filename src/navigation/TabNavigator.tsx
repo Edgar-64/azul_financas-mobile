@@ -47,26 +47,6 @@ export default function TabNavigator() {
         }}
       />
 
-      {/* 3. BOTÃO CENTRAL (+) - CHAMA O MODAL DO APP.JS */}
-      <Tab.Screen
-        name="AddButton"
-        component={View}
-        options={{
-          tabBarButton: () => (
-            <View style={styles.plusContainer}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => navigation.navigate("NovoLancamento")}
-                style={styles.plusButton}
-                
-              >
-                <Ionicons name="add" size={35} color="#FFF" />
-              </TouchableOpacity>
-            </View>
-          ),
-        }}
-      />
-
       {/* 4. PAGAMENTO / CARTÃO */}
       <Tab.Screen
         name="PagamentoTab"

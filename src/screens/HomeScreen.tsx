@@ -8,10 +8,18 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
-import { PayGet, ContaGet, UserGet, ContaPost } from "../services/Users/post";
+import {
+  PayGet,
+  ContaGet,
+  UserGet,
+  ContaPost,
+  PayDelete,
+} from "../services/Users/post";
+import { useAutoReload } from "../services/useFetch";
 
 export default function HomeScreen({ navigation }: any) {
   const [pay, setPay] = useState<any[]>([]);
@@ -19,6 +27,8 @@ export default function HomeScreen({ navigation }: any) {
   const [user, setUser] = useState<any[]>([]);
   const [id, setId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  
 
   // Função para criar conta quando o usuário não tiver uma
   const handleCreateAccount = async () => {
@@ -38,6 +48,53 @@ export default function HomeScreen({ navigation }: any) {
       setLoading(false);
     }
   };
+
+  const recarregarDados = async () => {
+    try {
+      const Uid = await AsyncStorage.getItem("@user_id");
+      const query = "";
+      if (Uid) {
+        const [resPay, resConta] = await Promise.all([
+          PayGet(Uid, query).catch(() => []),
+          ContaGet(Uid).catch(() => []),
+        ]);
+        setPay(Array.isArray(resPay) ? resPay : resPay?.data || []);
+
+        if (resConta && Array.isArray(resConta)) setConta(resConta);
+        else if (resConta && resConta.data)
+          setConta(
+            Array.isArray(resConta.data) ? resConta.data : [resConta.data],
+          );
+        else if (resConta) setConta([resConta]);
+        else setConta([]);
+      }
+    } catch (error) {
+      console.error("Erro ao recarregar dados:", error);
+    }
+  };
+  
+  const { refreshing, onRefresh } = useAutoReload(recarregarDados);
+
+  // Função de deletar atualizada recebendo o ID do lançamento
+  const handleDelete = async (idLancamento: string | number) => {
+    if (!idLancamento) return;
+
+    setLoading(true);
+    try {
+      await PayDelete(idLancamento);
+      alert("Lançamento deletado com sucesso!");
+
+      // Recarrega os lançamentos e atualiza o saldo da conta na tela
+      await recarregarDados();
+    } catch (error: any) {
+      console.error("Erro ao deletar lançamento:", error.message);
+      alert("Não foi possível deletar o lançamento. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ... Mantém seu useEffect original e a função obterDataAtual
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem("@user_id");
@@ -123,6 +180,12 @@ export default function HomeScreen({ navigation }: any) {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 130 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
+        }
       >
         {/* HEADER */}
         <View style={styles.header}>
@@ -233,35 +296,53 @@ export default function HomeScreen({ navigation }: any) {
             style={{ marginTop: 20 }}
           />
         ) : (
-          pay.map((p, index) => (
-            <View key={p.id || index} style={styles.item}>
-              <View style={styles.iconBox}>
-                <Ionicons name="cash-outline" size={20} color="#1D355E" />
-              </View>
+          pay.map((p, index) => {
+            // Captura o ID correto do lançamento retornado pelo seu Back-end
+            const lancamentoId = p.id || p.idPay || p.idLaunch;
 
-              <View style={{ flex: 1 }}>
-                <Text style={styles.itemName}>
-                  {p.descricaoLaunch || "Sem descrição"}
-                </Text>
-                <Text style={styles.itemDate}>ID Usuário: {p.userId}</Text>
-                <Text style={styles.itemDate}>{p.data}</Text>
-              </View>
+            return (
+              <View key={lancamentoId || index} style={styles.item}>
+                <View style={styles.iconBox}>
+                  <Ionicons name="cash-outline" size={20} color="#1D355E" />
+                </View>
 
-              {p.tipoLaunch == "SAIDA" ? (
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text style={[styles.itemValue, { color: "#DC2626" }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.itemName}>
+                    {p.descricaoLaunch || "Sem descrição"}
+                  </Text>
+                  <Text style={styles.itemDate}>ID Usuário: {p.userId}</Text>
+                  <Text style={styles.itemDate}>{p.data}</Text>
+                </View>
+
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginRight: 10,
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.itemValue,
+                      {
+                        color: p.tipoLaunch === "SAIDA" ? "#DC2626" : "#0da519",
+                      },
+                    ]}
+                  >
                     R$ {p.valor || "0,00"}
                   </Text>
                 </View>
-              ) : (
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text style={[styles.itemValue, { color: "#0da519" }]}>
-                    R$ {p.valor || "0,00"}
-                  </Text>
-                </View>
-              )}
-            </View>
-          ))
+
+                {/* BOTÃO DE DELETAR ATUALIZADO */}
+                <TouchableOpacity
+                  onPress={() => handleDelete(lancamentoId)}
+                  style={styles.deleteButton}
+                >
+                  <Ionicons name="trash-outline" size={20} color="#DC2626" />
+                </TouchableOpacity>
+              </View>
+            );
+          })
         )}
       </ScrollView>
     </SafeAreaView>
@@ -277,6 +358,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 15,
     paddingBottom: 10,
+  },
+  deleteButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingLeft: 10,
   },
   title: { fontWeight: "bold", fontSize: 18, color: "#333" },
   subtitle: {

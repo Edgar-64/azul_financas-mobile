@@ -9,61 +9,61 @@ import {
   ScrollView,
   Platform,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { UserGet, CaixaGet } from "../services/Users/post";
+import { useAutoReload } from "../services/useFetch";
 
 export default function PerfilScreen() {
   const [user, setUser] = useState<any>(null);
   const [caixa, setCaixa] = useState<any[]>([]);
-  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<any>();
 
   const handleVerMais = () => {
-    console.log("Botão Ver Mais clicado!");
     navigation.navigate("Caixinhas");
   };
 
-  // 🚀 Redirecionando para a rota EditarPerfilScreen
   const handleEditarPerfil = () => {
-    console.log("Navegando para Editar Perfil...");
     navigation.navigate("EditarPerfilScreen");
   };
 
-  useEffect(() => {
-    const buscarIdSalvo = async () => {
-      try {
-        const idSalvo = await AsyncStorage.getItem("@user_id");
+  // --- LÓGICA DE RECARREGAMENTO BASEADA NA HOME ---
+  const recarregarDadosPerfil = async () => {
+    try {
+      const Uid = await AsyncStorage.getItem("@user_id");
 
-        if (idSalvo !== null) {
-          setUserId(idSalvo);
-          setLoading(true);
+      if (Uid) {
+        // Busca os dados em paralelo sem deixar uma rota travar a outra
+        const [resUser, resCaixa] = await Promise.all([
+          UserGet(Uid).catch(() => []),
+          CaixaGet(Uid).catch(() => []),
+        ]);
 
-          try {
-            // Dispara as chamadas da API em paralelo
-            const [resUser, resCaixa] = await Promise.all([
-              UserGet(idSalvo),
-              CaixaGet(idSalvo),
-            ]);
+        // Tratamento dos dados do Usuário
+        const dadosUsuario = resUser?.data ? resUser.data : resUser;
+        setUser(dadosUsuario);
 
-            const dadosUsuario = resUser?.data ? resUser.data : resUser;
-            setUser(dadosUsuario);
-            setCaixa(Array.isArray(resCaixa) ? resCaixa : resCaixa?.data || []);
-          } catch (error) {
-            console.error("Erro ao carregar dados do Perfil:", error);
-          } finally {
-            setLoading(false);
-          }
-        }
-      } catch (error) {
-        console.error("Erro ao buscar o ID local", error);
+        // Tratamento dos dados das Caixinhas (Garante que seja um Array)
+        setCaixa(Array.isArray(resCaixa) ? resCaixa : resCaixa?.data || []);
       }
-    };
+    } catch (error) {
+      console.error("Erro ao carregar dados do Perfil:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    buscarIdSalvo();
+  // Aplicação da função coringa para atualizar quando o usuário entrar na tela
+  const { refreshing, onRefresh } = useAutoReload(recarregarDadosPerfil);
+
+  // Carregamento inicial da página
+  useEffect(() => {
+    setLoading(true);
+    recarregarDadosPerfil();
   }, []);
 
   return (
@@ -73,14 +73,16 @@ export default function PerfilScreen() {
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
           <Ionicons name="menu" size={28} color="#333" />
         </TouchableOpacity>
-        
+
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>MEU PERFIL</Text>
           <Text style={styles.headerSubtitle}>Gestão de Metas</Text>
         </View>
 
-        {/* Ícone de engrenagem que vai para a edição */}
-        <TouchableOpacity onPress={handleEditarPerfil} style={{ marginRight: 15 }}>
+        <TouchableOpacity
+          onPress={handleEditarPerfil}
+          style={{ marginRight: 15 }}
+        >
           <Ionicons name="settings-outline" size={24} color="#333" />
         </TouchableOpacity>
 
@@ -89,8 +91,14 @@ export default function PerfilScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* AVATAR COM ÍCONE DE LÁPIS */}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* AVATAR */}
         <View style={styles.avatarContainer}>
           <Image
             source={{
@@ -98,22 +106,25 @@ export default function PerfilScreen() {
             }}
             style={styles.avatar}
           />
-          <TouchableOpacity style={styles.btnEditAvatar} onPress={handleEditarPerfil}>
+          <TouchableOpacity
+            style={styles.btnEditAvatar}
+            onPress={handleEditarPerfil}
+          >
             <Ionicons name="pencil" size={14} color="#FFF" />
           </TouchableOpacity>
         </View>
 
-        {/* EXIBIÇÃO DE INFORMAÇÕES DO USUÁRIO DINÂMICO */}
-        {loading ? (
+        {/* INFORMAÇÕES DO USUÁRIO DINÂMICO */}
+        {loading && !user ? (
           <ActivityIndicator
             size="small"
             color="#1D355E"
             style={{ marginTop: 10, marginBottom: 25 }}
           />
-        ) : (
+        ) : ( 
           <View style={styles.userInfoContainer}>
             <Text style={styles.userName}>
-              {user?.name || user?.username || "Usuário AZUL"}
+              {user?.nome || "Usuário AZUL"}
             </Text>
             <Text style={styles.userEmail}>
               {user?.email || "azul@email.com"}
@@ -121,13 +132,21 @@ export default function PerfilScreen() {
           </View>
         )}
 
-        {/* 🔘 BOTÃO PRINCIPAL DE EDITAR PERFIL */}
+        {/* BOTÃO EDITAR PERFIL */}
         <TouchableOpacity
-          style={[styles.btnEditarPerfil, Platform.OS === "web" && { cursor: "pointer" }]}
+          style={[
+            styles.btnEditarPerfil,
+            Platform.OS === "web" && { cursor: "pointer" },
+          ]}
           onPress={handleEditarPerfil}
           activeOpacity={0.8}
         >
-          <Ionicons name="create-outline" size={18} color="#FFF" style={{ marginRight: 8 }} />
+          <Ionicons
+            name="create-outline"
+            size={18}
+            color="#FFF"
+            style={{ marginRight: 8 }}
+          />
           <Text style={styles.txtEditarPerfil}>Editar Dados do Perfil</Text>
         </TouchableOpacity>
 
@@ -140,13 +159,13 @@ export default function PerfilScreen() {
             </View>
           </View>
 
-          {loading ? (
+          {loading && caixa.length === 0 ? (
             <ActivityIndicator
               size="small"
               color="#1D355E"
               style={{ marginVertical: 20 }}
             />
-          ) : caixa.length == 0 ? (
+          ) : caixa.length === 0 ? (
             <Text style={styles.emptyText}>Nenhuma caixinha encontrada.</Text>
           ) : (
             caixa.map((item, index) => {
@@ -155,9 +174,14 @@ export default function PerfilScreen() {
               const progresso = (valorGuardado / valorMeta) * 100;
 
               return (
-                <View key={item.id || index} style={styles.itemCaixinha}>
+                <View
+                  key={item.id || item.idCaixa || index}
+                  style={styles.itemCaixinha}
+                >
                   <View style={styles.infoCaixinha}>
-                    <Text style={styles.nomeCaixinha}>{item.alvo || "Meta"}</Text>
+                    <Text style={styles.nomeCaixinha}>
+                      {item.alvo || "Meta"}
+                    </Text>
                     <Text style={styles.valorCaixinha}>
                       {new Intl.NumberFormat("pt-BR", {
                         style: "currency",
@@ -165,14 +189,15 @@ export default function PerfilScreen() {
                       }).format(valorGuardado)}
                     </Text>
                   </View>
-                  
+
                   <View style={styles.barBack}>
                     <View
                       style={[
                         styles.barFront,
-                        { 
-                          width: `${Math.min(progresso, 100)}%`, 
-                          backgroundColor: progresso >= 100 ? "#16A34A" : "#2563EB" 
+                        {
+                          width: `${Math.min(progresso, 100)}%`,
+                          backgroundColor:
+                            progresso >= 100 ? "#16A34A" : "#2563EB",
                         },
                       ]}
                     />
@@ -200,6 +225,7 @@ export default function PerfilScreen() {
   );
 }
 
+// Mantive todos os seus estilos originais intactos abaixo
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F6F8" },
   header: {
@@ -284,7 +310,12 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   barFront: { height: "100%" },
-  emptyText: { textAlign: "center", color: "#999", marginVertical: 15, fontSize: 13 },
+  emptyText: {
+    textAlign: "center",
+    color: "#999",
+    marginVertical: 15,
+    fontSize: 13,
+  },
   btnVerMais: {
     marginTop: 10,
     paddingTop: 15,

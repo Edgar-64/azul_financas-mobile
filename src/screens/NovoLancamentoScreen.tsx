@@ -23,6 +23,8 @@ export default function NovoLancamentoScreen({ route, navigation }: any) {
 
   const { idConta } = route.params;
 
+  
+
   // Função responsável por processar o envio correto baseado na escolha do usuário
   const handleSalvar = async () => {
     if (!descricaoLaunch || !tipoLaunch || !valor || !tipoLaunch) {
