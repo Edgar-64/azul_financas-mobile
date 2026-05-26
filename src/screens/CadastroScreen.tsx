@@ -9,6 +9,7 @@ import {
   ScrollView,
   Image,
   Alert,
+  Platform,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,38 +22,50 @@ export default function CadastroScreen({ navigation }: any) {
   const [senha, setSenha] = useState(""); // Campo de confirmação
   const [loading, setLoading] = useState(false);
 
-  async function cadastrar() {
-    // 1. Validação de campos vazios
-    if (!name || !email || !password || !senha) {
-      Alert.alert("Aviso", "Por favor, preencha todos os campos!");
-      return;
-    }
-
-    // 2. Validação se as senhas são iguais
-    if (password !== senha) {
-      Alert.alert("Erro", "As senhas não coincidem. Tente novamente.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const objetoParaEnvio = { name, email, password };
-      await UserCadastro(objetoParaEnvio);
-
-      Alert.alert("Sucesso", "Cadastro realizado com sucesso!", [
-        { text: "OK", onPress: () => navigation.navigate("Login") }
-      ]);
-    } catch (error: any) {
-      console.error("Erro no cadastro:", error);
-      Alert.alert(
-        "Erro", 
-        "Falha no cadastro. Verifique seus dados ou a conexão com o servidor."
-      );
-    } finally {
-      setLoading(false);
-    }
+async function cadastrar() {
+  if (!name || !email || !password || !senha) {
+    Alert.alert("Aviso", "Por favor, preencha todos os campos!");
+    return;
   }
+
+  if (password !== senha) {
+    Alert.alert("Erro", "As senhas não coincidem. Tente novamente.");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const objetoParaEnvio = { name, email, password };
+    await UserCadastro(objetoParaEnvio);
+
+    // CORREÇÃO AQUI: Verifica se está rodando no Navegador ou no Celular
+    if (Platform.OS === "web") {
+      // No navegador usamos o alert padrão do ecossistema web
+      window.alert("Cadastro realizado com sucesso!");
+      navigation.replace("Login");
+    } else {
+      // No celular (Android/iOS) usamos o Alert nativo do React Native
+      Alert.alert(
+        "Sucesso", 
+        "Cadastro realizado com sucesso!",
+        [{ text: "OK", onPress: () => navigation.replace("Login") }],
+        { cancelable: false }
+      );
+    }
+
+  } catch (error: any) {
+    console.error("Erro no cadastro:", error);
+    
+    if (Platform.OS === "web") {
+      window.alert("Falha no cadastro. Verifique seus dados.");
+    } else {
+      Alert.alert("Erro", "Falha no cadastro. Verifique seus dados.");
+    }
+  } finally {
+    setLoading(false);
+  }
+}
 
   return (
     <SafeAreaView style={styles.container}>

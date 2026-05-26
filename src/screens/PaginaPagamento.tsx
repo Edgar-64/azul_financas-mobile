@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,20 +11,33 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { UserGetById } from "../services/Users/post"; 
 
 const { width } = Dimensions.get("window");
-
-// ... seus outros imports
-import { UserGetById } from "../services/Users/post"; // Importe a função
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function PaginaPagamento({ navigation }: any) {
   const [abaAtiva, setAbaAtiva] = useState<"scan" | "myqr">("scan");
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
-  const userId = AsyncStorage.getItem("@user_id");
+  const [meuId, setMeuId] = useState<string>("");
 
-  // FUNÇÃO ATUALIZADA: Disparada ao ler o QR Code
+  // Busca o ID do usuário logado de forma assíncrona assim que a tela abre
+  useEffect(() => {
+    const obterMeuId = async () => {
+      try {
+        const idSalvo = await AsyncStorage.getItem("@user_id");
+        if (idSalvo) {
+          setMeuId(idSalvo);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar @user_id do AsyncStorage:", error);
+      }
+    };
+    obterMeuId();
+  }, []);
+
+  // FUNÇÃO DE LEITURA: Disparada ao ler o QR Code
   const handleBarCodeScanned = async ({
     type,
     data,
@@ -32,14 +45,25 @@ export default function PaginaPagamento({ navigation }: any) {
     type: string;
     data: string;
   }) => {
-    setScanned(true); // Pausa a câmera para não ler em loop
+    setScanned(true); // Pausa a câmera para evitar loops de leitura
 
     try {
-      // Supondo que o QR Code lido contenha apenas o ID numérico do usuário (Ex: "12")
-      const idDoUsuarioLido = Number(data);
+      // Supondo que o QR Code lido contenha o formato "receber:ID" ou apenas o "ID" puro
+      // Vamos tentar quebrar a string caso use o padrão de prefixo explicativo
+      const partes = data.split(":");
+      const idString = partes.length > 1 ? partes[1] : partes[0];
+      const idDoUsuarioLido = Number(idString);
 
       if (isNaN(idDoUsuarioLido)) {
-        Alert.alert("Erro", "QR Code inválido para pagamentos.");
+        Alert.alert("Erro", "Formato de QR Code inválido para pagamentos.");
+        setScanned(false);
+        return;
+      }
+
+      // Evita que o usuário tente pagar a si mesmo
+      if (meuId && idDoUsuarioLido === Number(meuId)) {
+        Alert.alert("Aviso", "Você não pode realizar uma operação para você mesmo.");
+        setScanned(false);
         return;
       }
 
@@ -49,7 +73,7 @@ export default function PaginaPagamento({ navigation }: any) {
       // Se encontrou, mostra os dados dele para confirmação
       Alert.alert(
         "Confirmar Pagamento",
-        `Deseja pagar para: ${outroUsuario.name}?\nEmail: ${outroUsuario.email}`,
+        `Deseja pagar para:\n\nNome: ${outroUsuario.name}\nEmail: ${outroUsuario.email}`,
         [
           {
             text: "Cancelar",
@@ -59,8 +83,7 @@ export default function PaginaPagamento({ navigation }: any) {
           {
             text: "Confirmar e Avançar",
             onPress: () => {
-              // Aqui você navega para a tela de digitar o valor do pagamento,
-              // passando os dados do usuário que você acabou de buscar
+              // Navega para a tela de digitar o valor passando o objeto do recebedor
               navigation.navigate("EnviarValorScreen", {
                 recebedor: outroUsuario,
               });
@@ -71,11 +94,9 @@ export default function PaginaPagamento({ navigation }: any) {
       );
     } catch (error) {
       Alert.alert("Erro", "Não foi possível encontrar os dados deste usuário.");
-      setScanned(false); // Reativa a câmera caso dê erro
+      setScanned(false); // Reativa a câmera caso dê erro no back-end
     }
   };
-
-  // ... resto do seu código (Tabs, CameraView, My QR, etc)
 
   return (
     <SafeAreaView style={styles.container}>
@@ -134,14 +155,12 @@ export default function PaginaPagamento({ navigation }: any) {
               </View>
             ) : (
               <View style={styles.scannerFrame}>
-                {/* CONFIGURAÇÃO DA API INSERIDA AQUI */}
                 <CameraView
                   style={styles.camera}
                   facing="back"
                   barcodeScannerSettings={{
-                    barcodeTypes: ["qr"], // Otimiza o foco apenas em QR Codes
+                    barcodeTypes: ["qr"],
                   }}
-                  // Se já foi escaneado, passa 'undefined' para congelar a leitura
                   onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
                 />
 
@@ -171,11 +190,13 @@ export default function PaginaPagamento({ navigation }: any) {
             <View style={styles.qrWrapper}>
               <Image
                 source={{
-                  uri: "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=ChildPay",
+                  // DINÂMICO: Passa a string 'receber:ID' para a API de geração
+                  uri: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=receber:${meuId || "0"}`,
                 }}
                 style={styles.qrImage}
               />
             </View>
+            <Text style={styles.meuIdVisual}>Seu ID de recebimento: {meuId || "..."}</Text>
           </View>
         )}
       </View>
@@ -254,4 +275,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
   },
   qrImage: { width: 220, height: 220 },
+  meuIdVisual: {
+    marginTop: 15,
+    fontSize: 14,
+    color: "#1D355E",
+    fontWeight: "500"
+  }
 });

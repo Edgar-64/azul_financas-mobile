@@ -90,3 +90,5 @@ export const PayDelete = (idLancamento: string | number) =>
   apiRequest("DELETE", `/Pay/${idLancamento}`);
 export const UserGetById = (userId: string | number) =>
   apiRequest("GET", `/usersEx/${userId}`);
+export const ServiceGet = (dados:number) =>
+  apiRequest("GET", `/servicos`, dados);

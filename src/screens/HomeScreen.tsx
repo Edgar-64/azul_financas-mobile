@@ -310,7 +310,6 @@ export default function HomeScreen({ navigation }: any) {
                   <Text style={styles.itemName}>
                     {p.descricaoLaunch || "Sem descrição"}
                   </Text>
-                  <Text style={styles.itemDate}>ID Usuário: {p.userId}</Text>
                   <Text style={styles.itemDate}>{p.data}</Text>
                 </View>
 
