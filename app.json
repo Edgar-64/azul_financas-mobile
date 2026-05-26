@@ -25,6 +25,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "O aplicativo precisa de acesso à câmera para ler QR Codes de pagamento."
+        }
+      ]
+    ]
   }
 }

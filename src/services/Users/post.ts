@@ -88,3 +88,5 @@ export const CaixaPostRecuperar = (dados: any) =>
   apiRequest("POST", `/caixa/recuperar`, dados);
 export const PayDelete = (idLancamento: string | number) =>
   apiRequest("DELETE", `/Pay/${idLancamento}`);
+export const UserGetById = (userId: string | number) =>
+  apiRequest("GET", `/usersEx/${userId}`);

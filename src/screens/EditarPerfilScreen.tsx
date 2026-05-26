@@ -34,6 +34,7 @@ export default function EditarPerfilScreen({ navigation }: any) {
         { name: nome, email: email },
         Number(userId),
       );
+      navigation.goBack();
     } catch (error: any) {
       console.error("Erro detectado:", error.message);
       Alert.alert("Erro", "E-mail ou senha incorretos. Tente novamente.");
@@ -93,7 +94,7 @@ export default function EditarPerfilScreen({ navigation }: any) {
           />
         </View>
 
-        <TouchableOpacity style={styles.saveBtn} onPress={(handleUpdate) => navigation.replace("Perfil")}>
+        <TouchableOpacity style={styles.saveBtn} onPress={handleUpdate}>
           <Text style={styles.saveBtnText}>Salvar</Text>
         </TouchableOpacity>
       </View>
