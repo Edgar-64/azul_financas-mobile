@@ -48,7 +48,7 @@ export default function HomeScreen({ navigation }: any) {
       setLoading(false);
     }
   };
-
+//
   const recarregarDados = async () => {
     try {
       const Uid = await AsyncStorage.getItem("@user_id");
