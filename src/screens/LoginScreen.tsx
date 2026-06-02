@@ -28,7 +28,7 @@ export default function LoginScreen({ navigation }: any) {
     setLoading(true);
 
     try {
-      const resposta = await UserLogin({ email, password });
+      const resposta = await UserLogin({ email, password, tipo: "USER" });
 
       if (resposta && resposta.user && resposta.user.id) {
         const userId = resposta.user.id;

@@ -31,7 +31,7 @@ export default function EditarPerfilScreen({ navigation }: any) {
     try {
       //  Correto: Primeiro o objeto com os dados, depois o ID separado
       const resposta = await UserPut(
-        { name: nome, email: email },
+        { name: nome, email: email, tipo: "USER" },
         Number(userId),
       );
       navigation.goBack();
