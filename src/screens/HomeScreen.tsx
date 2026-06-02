@@ -94,8 +94,6 @@ export default function HomeScreen({ navigation }: any) {
     }
   };
 
-  // ... Mantém seu useEffect original e a função obterDataAtual
-
   const handleLogout = async () => {
     await AsyncStorage.removeItem("@user_id");
     navigation.replace("Login");

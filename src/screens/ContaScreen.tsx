@@ -12,7 +12,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-// IMPORTANTE: Substitua pelo caminho e nome correto da sua função de POST de conta
 import { ContaPost } from "../services/Users/post"; 
 
 export default function ContaScreen({ navigation }: any) {
@@ -35,7 +34,7 @@ export default function ContaScreen({ navigation }: any) {
 
     setLoading(true);
 
-    // Monta o objeto no padrão que o seu backend costuma receber (convertendo os tipos)
+    // Monta o objeto no padrão que o backend costuma receber (convertendo os tipos)
     const objetoParaEnvio = {
       userId: Number(userId),
       banco: banco, // Vai em UPPERCASE devido ao TextInput

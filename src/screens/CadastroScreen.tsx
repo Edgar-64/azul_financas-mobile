@@ -39,7 +39,6 @@ async function cadastrar() {
     const objetoParaEnvio = { name, email, password };
     await UserCadastro(objetoParaEnvio);
 
-    // CORREÇÃO AQUI: Verifica se está rodando no Navegador ou no Celular
     if (Platform.OS === "web") {
       // No navegador usamos o alert padrão do ecossistema web
       window.alert("Cadastro realizado com sucesso!");

@@ -8,7 +8,7 @@ import PerfilScreen from '../screens/PerfilScreen';
 import LoginScreen from '../screens/LoginScreen';
 import CaixinhasScreen from '../screens/CaixinhasScreen'; 
 
-// 🚨 1. IMPORTE A TELA DE EDIÇÃO AQUI EM CIMA
+// 1. IMPORTE A TELA DE EDIÇÃO AQUI EM CIMA
 import EditarPerfilScreen from '../screens/EditarPerfilScreen'; 
 
 const Drawer = createDrawerNavigator();
@@ -51,7 +51,7 @@ export default function DrawerNavigator() {
         }}
       />
 
-      {/* 🚨 2. ADICIONE ESSA ROTA AQUI PARA O BOTÃO FUNCIONAR */}
+      {/* 2. ADICIONE ESSA ROTA AQUI PARA O BOTÃO FUNCIONAR */}
       {/* O 'display: none' garante que ela não apareça na lista do menu lateral */}
       <Drawer.Screen 
         name="EditarPerfilScreen" 
