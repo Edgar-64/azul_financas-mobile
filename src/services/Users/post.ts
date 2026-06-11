@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const API_URL = "http://172.17.240.1:3001";
+const API_URL = "https://api-1-hzc3.onrender.com";
 const apiRequest = async (
   method: "GET" | "POST" | "PUT" | "DELETE",
   endpoint: string,
